@@ -1,8 +1,22 @@
 // /api/generate.js — Vercel serverless function
-// Generates a German story + glossary using OpenAI's structured outputs.
-// Reads OPENAI_API_KEY from Vercel environment variables.
+// Generates a German story + glossary using structured outputs.
+// Supports two providers: OpenAI and xAI Grok (OpenAI-compatible API).
+// Env vars: OPENAI_API_KEY, XAI_API_KEY (only required for the provider used).
 
-const MODEL = process.env.OPENAI_MODEL || 'gpt-4o';
+const PROVIDERS = {
+  openai: {
+    label: 'OpenAI',
+    endpoint: 'https://api.openai.com/v1/chat/completions',
+    envKey: 'OPENAI_API_KEY',
+    defaultModel: process.env.OPENAI_MODEL || 'gpt-4o',
+  },
+  grok: {
+    label: 'Grok (xAI)',
+    endpoint: 'https://api.x.ai/v1/chat/completions',
+    envKey: 'XAI_API_KEY',
+    defaultModel: process.env.XAI_MODEL || 'grok-4',
+  },
+};
 
 const LENGTH_WORDS = {
   short: 120,
@@ -31,6 +45,10 @@ const STORY_SCHEMA = {
       story: {
         type: 'string',
         description: 'The full German story. Paragraphs separated by blank lines (\\n\\n).',
+      },
+      translation: {
+        type: 'string',
+        description: 'A natural, faithful English translation of the full story. Use the SAME number of paragraphs as the German story, separated by blank lines (\\n\\n), so paragraphs align one-to-one.',
       },
       glossary: {
         type: 'array',
@@ -64,7 +82,7 @@ const STORY_SCHEMA = {
         },
       },
     },
-    required: ['title', 'story', 'glossary'],
+    required: ['title', 'story', 'translation', 'glossary'],
     additionalProperties: false,
   },
 };
@@ -82,17 +100,22 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return res.status(500).send('OPENAI_API_KEY is not set in environment variables.');
-  }
-
   // ---- Parse + validate input ----
   let body = req.body;
   if (typeof body === 'string') {
     try { body = JSON.parse(body); } catch { body = {}; }
   }
   body = body || {};
+
+  const providerKey = PROVIDERS[body.provider] ? body.provider : 'openai';
+  const provider = PROVIDERS[providerKey];
+  const apiKey = process.env[provider.envKey];
+  if (!apiKey) {
+    return res.status(500).send(`${provider.envKey} is not set in environment variables.`);
+  }
+  const model = typeof body.model === 'string' && body.model.trim()
+    ? body.model.trim()
+    : provider.defaultModel;
 
   const vocab = Number.isFinite(Number(body.vocab)) ? Number(body.vocab) : 3000;
   const level = ['A1', 'A2', 'B1', 'B2', 'C1'].includes(body.level) ? body.level : 'A2';
@@ -119,6 +142,11 @@ Constraints for this request:
 - Length target: approximately ${wordTarget} German words (within ±20%).
 - ${topicLine}
 
+Translation requirements:
+- Provide a natural, idiomatic English translation that reads like real English — not a word-for-word gloss.
+- Preserve the tone, voice, and register of the German.
+- IMPORTANT: Use exactly the same paragraph structure. If the German story has 4 paragraphs separated by blank lines, the English translation must also have 4 paragraphs separated by blank lines, in the same order.
+
 Glossary requirements:
 - Include every word that might genuinely challenge a learner at level ${level}.
 - ALWAYS include: separable verbs, irregular verbs, compound nouns, idioms, less common adjectives.
@@ -133,16 +161,16 @@ Write in clean, natural German. Paragraphs separated by blank lines.`;
 
   const userPrompt = `Please compose the story now. Return JSON matching the schema.`;
 
-  // ---- Call OpenAI ----
+  // ---- Call the chosen provider ----
   try {
-    const oaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    const apiRes = await fetch(provider.endpoint, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: MODEL,
+        model,
         temperature: 0.85,
         messages: [
           { role: 'system', content: systemPrompt },
@@ -155,16 +183,16 @@ Write in clean, natural German. Paragraphs separated by blank lines.`;
       }),
     });
 
-    if (!oaiRes.ok) {
-      const errText = await oaiRes.text();
-      console.error('OpenAI error:', oaiRes.status, errText);
-      return res.status(502).send(`OpenAI API error (${oaiRes.status}): ${errText.slice(0, 500)}`);
+    if (!apiRes.ok) {
+      const errText = await apiRes.text();
+      console.error(`${provider.label} error:`, apiRes.status, errText);
+      return res.status(502).send(`${provider.label} API error (${apiRes.status}): ${errText.slice(0, 500)}`);
     }
 
-    const oaiData = await oaiRes.json();
-    const content = oaiData?.choices?.[0]?.message?.content;
+    const data = await apiRes.json();
+    const content = data?.choices?.[0]?.message?.content;
     if (!content) {
-      return res.status(502).send('OpenAI returned an empty response.');
+      return res.status(502).send(`${provider.label} returned an empty response.`);
     }
 
     let parsed;
@@ -172,9 +200,10 @@ Write in clean, natural German. Paragraphs separated by blank lines.`;
       parsed = JSON.parse(content);
     } catch (e) {
       console.error('JSON parse failed. Content was:', content);
-      return res.status(502).send('OpenAI returned non-JSON content.');
+      return res.status(502).send(`${provider.label} returned non-JSON content.`);
     }
 
+    parsed._meta = { provider: providerKey, model };
     return res.status(200).json(parsed);
   } catch (err) {
     console.error('Generate handler error:', err);

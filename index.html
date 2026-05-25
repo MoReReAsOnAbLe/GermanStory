@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#f4ecd9" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#181410" media="(prefers-color-scheme: dark)" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
 <title>Lesehaus — German stories, calibrated to your vocabulary</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -57,7 +61,11 @@
 html { color-scheme: light dark; }
 html, body { transition: background-color 0.4s ease, color 0.4s ease; }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+button, .w, .tool-btn, .ctrl-btn, .topic-chip, .segmented button,
+.pop-action, .lib-icon-btn, .pop-speak, .pop-close, .lib-close,
+.story-card, .def-mode-select { touch-action: manipulation; }
 
 html, body {
   background: var(--paper);
@@ -130,7 +138,13 @@ header.site::after {
   display: flex;
   align-items: baseline;
   gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
+.brand:hover .brand-mark { transform: rotate(-3deg); }
+.brand-mark { transition: transform 0.2s ease; }
 
 .brand-mark {
   font-family: 'Fraunces', serif;
@@ -1069,6 +1083,147 @@ footer.site {
 
 .hidden { display: none !important; }
 
+/* ---------- TRANSLATION ---------- */
+.trans-p {
+  display: none;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 0.96rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin: -0.4em 0 1.2em;
+  padding: 0.5em 0 0.5em 1rem;
+  border-left: 2px solid var(--accent);
+  font-style: italic;
+  max-width: 64ch;
+  letter-spacing: 0;
+}
+
+.story-body.show-translation .trans-p { display: block; }
+.story-body.show-translation p:not(.trans-p) { margin-bottom: 0.5em; }
+
+.ctrl-btn[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* ---------- STORY CARDS ---------- */
+.story-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.95rem 0;
+  border-bottom: 1px dashed var(--rule);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.12s ease;
+}
+
+.story-card:hover { background: var(--paper-deep); }
+
+.story-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.story-card-title {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 500, 'SOFT' 30;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  flex: 1;
+  min-width: 0;
+}
+
+.story-card-date {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+.story-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--ink-faint);
+}
+
+.story-card-meta .meta-tag {
+  padding: 0.18rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--tag-bg);
+}
+
+.story-card-meta .meta-tag.accent {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.story-card-preview {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 14, 'wght' 400;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  font-style: italic;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.story-card-delete {
+  position: absolute;
+  top: 0.7rem;
+  right: 0;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ink-faint);
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.story-card:hover .story-card-delete { opacity: 1; }
+.story-card-delete:hover { color: var(--accent); border-color: var(--accent); }
+.story-card-delete svg { width: 11px; height: 11px; }
+
+/* ---------- AUDIO LOADING ---------- */
+.ctrl-btn.is-loading {
+  opacity: 0.7;
+  pointer-events: none;
+  position: relative;
+}
+.ctrl-btn.is-loading::after {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  margin-left: 0.4rem;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* ---------- ANIMATIONS ---------- */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -1084,20 +1239,230 @@ footer.site {
 .fade-in-stagger > *:nth-child(5) { animation-delay: 0.45s; }
 
 /* ---------- MOBILE ---------- */
-@media (max-width: 640px) {
-  header.site { flex-direction: column; gap: 0.8rem; align-items: flex-start; }
-  .header-right { align-items: flex-start; width: 100%; }
-  .header-tools { width: 100%; justify-content: space-between; }
-  .tagline { text-align: left; margin-top: 0; }
-  .control-grid { grid-template-columns: 1fr; }
-  .reader-controls { gap: 0.4rem; }
-  .ctrl-btn { font-size: 0.78rem; padding: 0.5rem 0.8rem; }
+@media (max-width: 720px) {
+  .container {
+    padding: 1rem;
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  /* Header — tighter, no tagline */
+  header.site {
+    flex-direction: column;
+    gap: 0.8rem;
+    align-items: flex-start;
+    padding-bottom: 1.1rem;
+    margin-bottom: 1.6rem;
+  }
+  .brand { gap: 0.5rem; }
+  .brand-mark { font-size: 2rem; }
+  .brand h1 { font-size: 1.65rem; }
+  .header-right {
+    align-items: flex-start;
+    width: 100%;
+    gap: 0;
+  }
+  .header-tools {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+  .tagline { display: none; }
+  .tool-btn {
+    padding: 0.55rem 0.7rem;
+    min-height: 40px;
+    font-size: 0.66rem;
+    gap: 0.35rem;
+  }
+  .tool-btn svg { width: 14px; height: 14px; }
+  .tool-btn .badge { min-width: 17px; height: 17px; font-size: 0.62rem; padding: 0 4px; }
+
+  /* Setup */
+  .setup { gap: 1.5rem; }
+  .setup-intro {
+    font-size: clamp(1.35rem, 5vw, 1.85rem);
+    max-width: none;
+    line-height: 1.25;
+  }
+  .control-grid { grid-template-columns: 1fr; gap: 1.3rem 0; }
+  .field-hint { font-size: 0.74rem; }
+  .text-input {
+    font-size: 16px;          /* prevents iOS auto-zoom on focus */
+    padding: 0.8rem 0.9rem;
+  }
+  .segmented button {
+    padding: 0.7rem 0.4rem;
+    font-size: 0.82rem;
+    min-height: 44px;
+  }
+  .topic-chip { font-size: 0.82rem; padding: 0.45rem 0.75rem; }
+  .generate-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.95rem 1.2rem;
+    font-size: 1rem;
+  }
+
+  /* Reader */
+  .reader { gap: 1.4rem; }
+  .reader-meta { font-size: 0.66rem; gap: 0.4rem; }
+  .story-title {
+    font-size: clamp(1.9rem, 7vw, 2.5rem);
+    line-height: 1.08;
+  }
+  .story-body {
+    font-size: 1.1rem;
+    max-width: none;
+    line-height: 1.62;
+  }
+  .story-body p:first-of-type::first-letter { font-size: 3em; margin-right: 0.06em; }
+  /* Slightly larger tap targets for words */
+  .w { padding: 0.12em 0.1em; margin: 0 -0.1em; border-radius: 3px; }
+  /* On touch devices a sustained "hover" isn't real — use :active for tap feedback */
+  .w:active { background: var(--active); }
+
+  .trans-p {
+    font-size: 0.94rem;
+    padding: 0.45em 0 0.45em 0.85rem;
+    margin: -0.3em 0 1em;
+  }
+
+  /* Reader controls — wrap into rows, full-width selects on a second row */
+  .reader-controls {
+    gap: 0.4rem;
+    padding: 0.9rem 0;
+  }
+  .ctrl-btn {
+    font-size: 0.84rem;
+    padding: 0.65rem 0.9rem;
+    min-height: 42px;
+    flex: 0 1 auto;
+  }
   .ctrl-spacer { display: none; }
-  .def-mode-select { width: 100%; margin-top: 0.4rem; }
-  .library-panel { max-height: calc(100vh - 2rem); }
-  .library-header { padding: 1rem 1.1rem 0.7rem; }
-  .library-search, .library-footer { padding-left: 1.1rem; padding-right: 1.1rem; }
+  .def-mode-select {
+    width: 100%;
+    margin: 0.25rem 0 0;
+    padding: 0.65rem 0.7rem;
+    font-size: 0.72rem;
+    min-height: 40px;
+  }
+
+  /* Footer */
+  footer.site {
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 2.5rem;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  /* Library / Stories overlays — slide up from bottom */
+  .library-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .library-panel {
+    max-height: 90vh;
+    max-height: 90dvh;
+    border-radius: 14px 14px 0 0;
+    border-bottom: none;
+    border-left: none;
+    border-right: none;
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(.2,.8,.2,1);
+  }
+  .library-overlay.is-visible .library-panel { transform: translateY(0); }
+  .library-header { padding: 1rem 1.1rem 0.75rem; }
+  .library-header h2 { font-size: 1.4rem; }
+  .lib-close { font-size: 1.8rem; padding: 0.2rem 0.6rem; }
+  .library-search { padding: 0.7rem 1.1rem; }
+  .library-search input { padding: 0.7rem 0.9rem; font-size: 16px; min-height: 42px; }
   .library-body { padding: 0.4rem 1.1rem; }
+  .library-footer {
+    padding: 0.85rem 1.1rem;
+    padding-bottom: max(0.85rem, env(safe-area-inset-bottom));
+  }
+  .library-footer .ctrl-btn { flex: 1; justify-content: center; }
+
+  /* Story cards: larger tap area, delete always visible on touch */
+  .story-card { padding: 0.95rem 0; padding-right: 32px; }
+  .story-card-delete { opacity: 1; width: 28px; height: 28px; top: 0.9rem; }
+
+  /* Loading */
+  .loading { padding: 3rem 0; }
+  .loading h2 { font-size: 1.55rem; }
+
+  /* POPOVER → bottom sheet on mobile */
+  .popover {
+    position: fixed !important;
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100%;
+    max-width: none !important;
+    min-width: 0 !important;
+    max-height: 75vh;
+    max-height: 75dvh;
+    overflow-y: auto;
+    border-radius: 14px 14px 0 0;
+    border-bottom: none;
+    border-left: none;
+    border-right: none;
+    box-shadow: 0 -8px 28px -4px rgba(0, 0, 0, 0.35);
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(.2,.8,.2,1), opacity 0.2s ease;
+    padding-bottom: env(safe-area-inset-bottom);
+    -webkit-overflow-scrolling: touch;
+  }
+  .popover.is-visible { transform: translateY(0); }
+  .popover-arrow { display: none; }
+  .popover::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--rule);
+    border-radius: 2px;
+    margin: 8px auto 4px;
+  }
+  .popover-header { padding: 0.6rem 1.2rem 0.5rem; }
+  .pop-word { font-size: 1.5rem; }
+  .pop-speak, .lib-icon-btn { width: 36px; height: 36px; }
+  .pop-speak svg, .lib-icon-btn svg { width: 14px; height: 14px; }
+  .pop-close { width: 32px; height: 32px; font-size: 1.4rem; }
+  .popover-body { padding: 0.7rem 1.2rem 1rem; gap: 0.6rem; }
+  .pop-translation { font-size: 1.1rem; }
+  .pop-action { padding: 0.7rem 0.8rem; font-size: 0.7rem; min-height: 42px; }
+
+  /* Error block */
+  .error { padding: 1.1rem; font-size: 0.95rem; }
+}
+
+/* Smaller phones — drop tool-button labels, keep icons + badges */
+@media (max-width: 420px) {
+  .brand-mark { font-size: 1.85rem; }
+  .brand h1 { font-size: 1.5rem; }
+  .tool-btn > span:not(.badge) { display: none; }
+  .tool-btn { padding: 0.55rem 0.6rem; }
+  .container { padding: 0.85rem; padding-left: max(0.85rem, env(safe-area-inset-left)); padding-right: max(0.85rem, env(safe-area-inset-right)); }
+  .meta-tag { padding: 0.22rem 0.45rem; }
+}
+
+/* No real hover on touch devices — kill sticky :hover artifacts */
+@media (hover: none) {
+  .w:hover { background: transparent; }
+  .w.is-active { background: var(--active); }
+  .w.is-speaking { background: var(--accent); color: var(--paper); }
+  .tool-btn:hover { background: var(--tag-bg); color: var(--ink-soft); border-color: var(--rule); }
+  .ctrl-btn:hover { background: transparent; color: var(--ink); }
+  .ctrl-btn.primary:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .topic-chip:hover { background: transparent; border-color: var(--ink-faint); color: var(--ink-soft); }
+  .story-card:hover { background: transparent; }
+  .story-card-delete { opacity: 1; }
+  .lib-icon-btn:hover { border-color: var(--rule); color: var(--ink-soft); }
+  .lib-icon-btn.danger:hover { border-color: var(--rule); color: var(--ink-soft); }
 }
 </style>
 <script>
@@ -1122,12 +1487,21 @@ footer.site {
 <div class="container">
 
   <header class="site fade-in">
-    <div class="brand">
+    <a class="brand" id="brand-link" href="#" title="Home">
       <span class="brand-mark">L</span>
       <h1>Lesehaus</h1>
-    </div>
+    </a>
     <div class="header-right">
       <div class="header-tools">
+        <button class="tool-btn has-zero" id="stories-btn" title="Browse your saved stories">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 2.5h7.5L13 5v8.5H3z"/>
+            <path d="M10 2.5V5h3"/>
+            <path d="M5.5 8h5M5.5 10.5h5"/>
+          </svg>
+          <span>Stories</span>
+          <span class="badge" id="stories-count">0</span>
+        </button>
         <button class="tool-btn has-zero" id="library-btn" title="View words you've marked as known">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
             <path d="M2 3h4.5a1.5 1.5 0 0 1 1.5 1.5V13a1.5 1.5 0 0 0-1.5-1.5H2zM14 3H9.5A1.5 1.5 0 0 0 8 4.5V13a1.5 1.5 0 0 1 1.5-1.5H14z"/>
@@ -1160,6 +1534,17 @@ footer.site {
       </p>
 
       <div class="control-grid">
+
+        <div class="field">
+          <div class="field-label">
+            <span>AI provider</span>
+          </div>
+          <div class="segmented" data-control="provider">
+            <button data-value="openai" aria-pressed="true">OpenAI</button>
+            <button data-value="grok">Grok (xAI)</button>
+          </div>
+          <p class="field-hint" data-hint="provider">GPT-4o — high-quality storytelling</p>
+        </div>
 
         <div class="field">
           <div class="field-label">
@@ -1259,10 +1644,24 @@ footer.site {
           <svg viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="2" width="8" height="8"/></svg>
           <span>Stop</span>
         </button>
+        <button class="ctrl-btn" id="translate-btn" type="button" aria-pressed="false" title="Show English translation alongside each paragraph">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 2h5M3.5 2v7M2 5h3M7 11l2.5-6 2.5 6M7.7 9.2h3.6"/></svg>
+          <span>Translate</span>
+        </button>
         <button class="ctrl-btn" id="regenerate-btn" type="button">↻ Regenerate</button>
         <button class="ctrl-btn" id="new-story-btn" type="button">＋ New story</button>
 
         <span class="ctrl-spacer"></span>
+
+        <select class="def-mode-select" id="tts-engine" title="Voice engine for the read-aloud button">
+          <option value="browser" selected>Voice · browser</option>
+          <option value="openai-alloy">Voice · OpenAI alloy</option>
+          <option value="openai-nova">Voice · OpenAI nova</option>
+          <option value="openai-shimmer">Voice · OpenAI shimmer</option>
+          <option value="openai-echo">Voice · OpenAI echo</option>
+          <option value="openai-fable">Voice · OpenAI fable</option>
+          <option value="openai-onyx">Voice · OpenAI onyx</option>
+        </select>
 
         <select class="def-mode-select" id="def-mode" title="How definitions are fetched when you click a word">
           <option value="glossary" selected>Definitions · pre-generated</option>
@@ -1270,6 +1669,8 @@ footer.site {
           <option value="dict">Definitions · dictionary API</option>
         </select>
       </div>
+
+      <audio id="audio-player" preload="none"></audio>
 
       <div id="reader-error"></div>
 
@@ -1282,6 +1683,24 @@ footer.site {
     <span id="voice-status">checking German voices…</span>
   </footer>
 
+</div>
+
+<!-- ============== STORIES OVERLAY ============== -->
+<div class="library-overlay" id="stories-overlay" aria-hidden="true">
+  <div class="library-panel" role="dialog" aria-label="Saved stories">
+    <header class="library-header">
+      <h2>Stories <span class="count" id="stories-count-label">0 stories</span></h2>
+      <button class="lib-close" id="stories-close" title="Close">×</button>
+    </header>
+    <div class="library-search">
+      <input type="text" id="stories-search" placeholder="Search saved stories…" />
+    </div>
+    <div class="library-body" id="stories-body"></div>
+    <footer class="library-footer">
+      <button class="ctrl-btn" id="stories-export" type="button">Export JSON</button>
+      <button class="ctrl-btn" id="stories-clear" type="button">Clear all</button>
+    </footer>
+  </div>
 </div>
 
 <!-- ============== LIBRARY OVERLAY ============== -->
@@ -1330,6 +1749,8 @@ footer.site {
     level: 'A2',
     length: 'medium',
     topic: '',
+    provider: 'openai',
+    view: 'setup',
     defMode: 'glossary',
     story: null,        // { title, story, glossary: [{word, lemma, pos, translation, note}] }
     glossaryMap: null,  // Map<string, glossaryEntry> keyed by lowercase word AND lemma
@@ -1339,18 +1760,129 @@ footer.site {
     cache: new Map(),   // Cache for AI / dict lookups
     theme: 'light',
     known: new Map(),   // Map<key, {word, lemma, pos, translation, addedAt}>
+    stories: [],        // Array<{id, title, story, translation, glossary, level, vocab, length, topic, createdAt}>
+    currentStoryId: null,
+    ttsEngine: 'browser', // 'browser' | 'openai-<voice>'
+    audioEl: null,
+    showTranslation: false,
+    currentAudio: null,   // { blob, url, timings, voice, storyId }
+    audioPlayMode: null,  // 'full' | 'segment' | null
+    _segListener: null,
+    _fullTimeListener: null,
   };
 
   const STORAGE_KEYS = {
     theme: 'lesehaus.theme',
     known: 'lesehaus.known.v1',
+    stories: 'lesehaus.stories.v1',
+    provider: 'lesehaus.provider',
   };
+
+  const MAX_SAVED_STORIES = 50;
+  const MAX_CACHED_AUDIOS = 25;
+
+  // ============== INDEXED DB FOR CACHED AUDIO ==============
+  const IDB_NAME = 'lesehaus';
+  const IDB_STORE = 'audio';
+  const IDB_VERSION = 1;
+  let _dbPromise = null;
+
+  function openDB() {
+    if (_dbPromise) return _dbPromise;
+    if (typeof indexedDB === 'undefined') {
+      _dbPromise = Promise.reject(new Error('IndexedDB not available'));
+      return _dbPromise;
+    }
+    _dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return _dbPromise;
+  }
+
+  async function idbGet(key) {
+    try {
+      const db = await openDB();
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const r = tx.objectStore(IDB_STORE).get(key);
+        r.onsuccess = () => resolve(r.result || null);
+        r.onerror = () => reject(r.error);
+      });
+    } catch { return null; }
+  }
+
+  async function idbPut(key, value) {
+    try {
+      const db = await openDB();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(value, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (e) { console.warn('idbPut failed:', e); }
+  }
+
+  async function idbDelete(key) {
+    try {
+      const db = await openDB();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).delete(key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (e) { console.warn('idbDelete failed:', e); }
+  }
+
+  async function idbAllEntries() {
+    try {
+      const db = await openDB();
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const store = tx.objectStore(IDB_STORE);
+        const keysReq = store.getAllKeys();
+        const valsReq = store.getAll();
+        keysReq.onsuccess = () => {
+          valsReq.onsuccess = () => {
+            const keys = keysReq.result || [];
+            const vals = valsReq.result || [];
+            resolve(keys.map((k, i) => ({ key: k, value: vals[i] })));
+          };
+        };
+        keysReq.onerror = () => reject(keysReq.error);
+        valsReq.onerror = () => reject(valsReq.error);
+      });
+    } catch { return []; }
+  }
+
+  async function pruneAudioCache() {
+    const entries = await idbAllEntries();
+    if (entries.length <= MAX_CACHED_AUDIOS) return;
+    entries.sort((a, b) => (b.value?.createdAt || 0) - (a.value?.createdAt || 0));
+    const toDelete = entries.slice(MAX_CACHED_AUDIOS);
+    for (const e of toDelete) await idbDelete(e.key);
+  }
+
+  function audioCacheKey(storyId, voice) {
+    return `${storyId}::${voice || 'default'}`;
+  }
 
   // ============== UTILITIES ==============
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
 
   const HINTS = {
+    provider: {
+      openai: 'GPT-4o — high-quality storytelling (uses OPENAI_API_KEY)',
+      grok: 'Grok-4 — xAI, distinctive voice (uses XAI_API_KEY)',
+    },
     vocab: {
       1000: 'Top 1,000 — beginner core vocabulary',
       2000: 'Top 2,000 — early conversational range',
@@ -1574,6 +2106,185 @@ footer.site {
     body.innerHTML = html.join('');
   }
 
+  // ============== SAVED STORIES (PERSISTED) ==============
+  function loadStories() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.stories);
+      if (!raw) return;
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        state.stories = arr.filter(s => s && s.id && s.story);
+      }
+    } catch (e) { console.warn('Could not load stories:', e); }
+    updateStoriesCount();
+  }
+
+  function persistStories() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.stories, JSON.stringify(state.stories));
+    } catch (e) {
+      console.warn('Could not save stories:', e);
+      // If quota exceeded, drop the oldest until it fits
+      while (state.stories.length > 1) {
+        state.stories.pop();
+        try {
+          localStorage.setItem(STORAGE_KEYS.stories, JSON.stringify(state.stories));
+          break;
+        } catch {}
+      }
+    }
+  }
+
+  function saveStory(data) {
+    const id = 'st_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+    const entry = {
+      id,
+      title: data.title || '(Untitled)',
+      story: data.story || '',
+      translation: data.translation || '',
+      glossary: data.glossary || [],
+      level: state.level,
+      vocab: state.vocab,
+      length: state.length,
+      topic: state.topic || '',
+      createdAt: Date.now(),
+    };
+    state.stories.unshift(entry);
+    if (state.stories.length > MAX_SAVED_STORIES) {
+      state.stories.length = MAX_SAVED_STORIES;
+    }
+    state.currentStoryId = id;
+    persistStories();
+    updateStoriesCount();
+    return id;
+  }
+
+  async function deleteStory(id) {
+    state.stories = state.stories.filter(s => s.id !== id);
+    if (state.currentStoryId === id) {
+      releaseCachedAudio();
+      state.currentStoryId = null;
+    }
+    persistStories();
+    updateStoriesCount();
+    // Also drop any cached audio for this story (any voice)
+    const all = await idbAllEntries();
+    const prefix = `${id}::`;
+    for (const e of all) {
+      if (typeof e.key === 'string' && e.key.startsWith(prefix)) await idbDelete(e.key);
+    }
+  }
+
+  function openStoryById(id, opts) {
+    const s = state.stories.find(x => x.id === id);
+    if (!s) return;
+    opts = opts || {};
+    releaseCachedAudio();
+    state.currentStoryId = id;
+    state.level = s.level || state.level;
+    state.vocab = (typeof s.vocab === 'number') ? s.vocab : state.vocab;
+    state.length = s.length || state.length;
+    state.topic = s.topic || '';
+    state.story = { title: s.title, story: s.story, translation: s.translation || '', glossary: s.glossary || [] };
+    state.showTranslation = false;
+    buildGlossaryMap(s.glossary || []);
+    renderStory(state.story);
+    syncTranslateButton();
+    showView('reader');
+    if (!opts.skipHash) pushHash('reader', id);
+    loadCachedAudioForCurrentStory();
+  }
+
+  function updateStoriesCount() {
+    const n = state.stories.length;
+    const btn = document.getElementById('stories-btn');
+    const badge = document.getElementById('stories-count');
+    if (badge) badge.textContent = String(n);
+    if (btn) btn.classList.toggle('has-zero', n === 0);
+    const label = document.getElementById('stories-count-label');
+    if (label) label.textContent = n === 1 ? '1 story' : `${n} stories`;
+  }
+
+  // ============== STORIES MODAL ==============
+  function openStories() {
+    closePopover();
+    renderStoriesList();
+    const ov = document.getElementById('stories-overlay');
+    ov.classList.add('is-visible');
+    ov.setAttribute('aria-hidden', 'false');
+    setTimeout(() => document.getElementById('stories-search')?.focus(), 50);
+  }
+
+  function closeStories() {
+    const ov = document.getElementById('stories-overlay');
+    ov.classList.remove('is-visible');
+    ov.setAttribute('aria-hidden', 'true');
+  }
+
+  function formatStoryDate(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    const today = new Date();
+    const sameDay = d.toDateString() === today.toDateString();
+    if (sameDay) {
+      return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    }
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: d.getFullYear() === today.getFullYear() ? undefined : 'numeric' });
+  }
+
+  function renderStoriesList(filter = '') {
+    const body = document.getElementById('stories-body');
+    if (!body) return;
+
+    if (state.stories.length === 0) {
+      body.innerHTML = `<div class="lib-empty">No saved stories yet.<span class="hint">stories are saved automatically when you generate one</span></div>`;
+      return;
+    }
+
+    const q = filter.trim().toLowerCase();
+    const filtered = q
+      ? state.stories.filter(s =>
+          (s.title || '').toLowerCase().includes(q) ||
+          (s.story || '').toLowerCase().includes(q) ||
+          (s.topic || '').toLowerCase().includes(q)
+        )
+      : state.stories;
+
+    if (filtered.length === 0) {
+      body.innerHTML = `<div class="lib-empty">No stories match "${escapeHtml(filter)}".</div>`;
+      return;
+    }
+
+    const html = filtered.map(s => {
+      const preview = (s.story || '').slice(0, 180).replace(/\s+/g, ' ');
+      const vocabTag = s.vocab === 0
+        ? 'no cap'
+        : `top ${(s.vocab/1000).toString().replace(/\.0$/, '')}k`;
+      return `
+        <div class="story-card" data-id="${escapeHtml(s.id)}">
+          <button class="story-card-delete" data-action="delete" title="Delete this story">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+          </button>
+          <div class="story-card-header">
+            <span class="story-card-title">${escapeHtml(s.title || '(Untitled)')}</span>
+            <span class="story-card-date">${escapeHtml(formatStoryDate(s.createdAt))}</span>
+          </div>
+          <div class="story-card-meta">
+            <span class="meta-tag accent">${escapeHtml(s.level || '')}</span>
+            <span class="meta-tag">${escapeHtml(vocabTag)} vocab</span>
+            <span class="meta-tag">${escapeHtml(s.length || '')}</span>
+            ${s.topic ? `<span class="meta-tag">${escapeHtml(s.topic.slice(0, 40))}${s.topic.length > 40 ? '…' : ''}</span>` : ''}
+          </div>
+          <p class="story-card-preview">${escapeHtml(preview)}${(s.story || '').length > 180 ? '…' : ''}</p>
+        </div>
+      `;
+    }).join('');
+    body.innerHTML = html;
+  }
+
   // ============== INIT VOICES ==============
   function pickGermanVoice() {
     const voices = speechSynthesis.getVoices();
@@ -1600,9 +2311,13 @@ footer.site {
     speechSynthesis.onvoiceschanged = initVoices;
   }
 
-  // ============== STARTUP: THEME + KNOWN ==============
+  // ============== STARTUP: THEME + KNOWN + STORIES ==============
   initTheme();
   loadKnown();
+  loadStories();
+
+  // Audio element handle
+  state.audioEl = document.getElementById('audio-player');
 
   // Theme button
   document.getElementById('theme-btn').addEventListener('click', toggleTheme);
@@ -1611,16 +2326,78 @@ footer.site {
   document.getElementById('library-btn').addEventListener('click', openLibrary);
   document.getElementById('lib-close').addEventListener('click', closeLibrary);
 
+  // Stories button
+  document.getElementById('stories-btn').addEventListener('click', openStories);
+  document.getElementById('stories-close').addEventListener('click', closeStories);
+
   // Close library on overlay click (but not panel click)
   document.getElementById('library-overlay').addEventListener('click', (e) => {
     if (e.target.id === 'library-overlay') closeLibrary();
   });
 
-  // Esc closes library too
+  // Close stories on overlay click
+  document.getElementById('stories-overlay').addEventListener('click', (e) => {
+    if (e.target.id === 'stories-overlay') closeStories();
+  });
+
+  // Stories search
+  document.getElementById('stories-search').addEventListener('input', (e) => {
+    renderStoriesList(e.target.value);
+  });
+
+  // Stories card actions
+  document.getElementById('stories-body').addEventListener('click', (e) => {
+    const card = e.target.closest('.story-card');
+    if (!card) return;
+    const id = card.dataset.id;
+    const deleteBtn = e.target.closest('[data-action="delete"]');
+    if (deleteBtn) {
+      e.stopPropagation();
+      deleteStory(id);
+      renderStoriesList(document.getElementById('stories-search').value);
+      return;
+    }
+    closeStories();
+    openStoryById(id);
+  });
+
+  // Stories clear all
+  document.getElementById('stories-clear').addEventListener('click', async () => {
+    if (state.stories.length === 0) return;
+    const ok = confirm(`Delete all ${state.stories.length} saved stories and their cached audio? This cannot be undone.`);
+    if (!ok) return;
+    state.stories = [];
+    releaseCachedAudio();
+    state.currentStoryId = null;
+    persistStories();
+    updateStoriesCount();
+    renderStoriesList(document.getElementById('stories-search').value);
+    // Wipe cached audio too
+    const all = await idbAllEntries();
+    for (const e of all) await idbDelete(e.key);
+  });
+
+  // Stories export
+  document.getElementById('stories-export').addEventListener('click', () => {
+    if (state.stories.length === 0) return;
+    const blob = new Blob([JSON.stringify(state.stories, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lesehaus-stories-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+
+  // Esc closes any open overlay
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      const ov = document.getElementById('library-overlay');
-      if (ov.classList.contains('is-visible')) closeLibrary();
+      const lib = document.getElementById('library-overlay');
+      if (lib.classList.contains('is-visible')) closeLibrary();
+      const st = document.getElementById('stories-overlay');
+      if (st.classList.contains('is-visible')) closeStories();
     }
   });
 
@@ -1689,7 +2466,8 @@ footer.site {
   }
 
   // ============== SEGMENTED CONTROLS ==============
-  function setupSegmented(name) {
+  function setupSegmented(name, opts) {
+    opts = opts || {};
     const group = document.querySelector(`[data-control="${name}"]`);
     if (!group) return;
     const hint = document.querySelector(`[data-hint="${name}"]`);
@@ -1702,9 +2480,31 @@ footer.site {
       // Coerce vocab to number
       state[name] = (name === 'vocab') ? Number(value) : value;
       if (hint) hint.textContent = HINTS[name][state[name]] || '';
+      if (opts.onChange) opts.onChange(state[name]);
     });
   }
 
+  function loadProvider() {
+    try {
+      const v = localStorage.getItem(STORAGE_KEYS.provider);
+      if (v !== 'openai' && v !== 'grok') return;
+      state.provider = v;
+      const group = document.querySelector('[data-control="provider"]');
+      if (group) {
+        group.querySelectorAll('button').forEach(b => {
+          if (b.dataset.value === v) b.setAttribute('aria-pressed', 'true');
+          else b.removeAttribute('aria-pressed');
+        });
+      }
+      const hint = document.querySelector('[data-hint="provider"]');
+      if (hint) hint.textContent = HINTS.provider[v] || '';
+    } catch {}
+  }
+  loadProvider();
+
+  setupSegmented('provider', { onChange: (v) => {
+    try { localStorage.setItem(STORAGE_KEYS.provider, v); } catch {}
+  }});
   setupSegmented('vocab');
   setupSegmented('level');
   setupSegmented('length');
@@ -1726,6 +2526,35 @@ footer.site {
     state.defMode = e.target.value;
   });
 
+  // TTS engine
+  $('#tts-engine').addEventListener('change', async (e) => {
+    state.ttsEngine = e.target.value;
+    if (state.ttsEngine.startsWith('openai-') && state.currentStoryId) {
+      const voice = state.ttsEngine.slice('openai-'.length);
+      if (!state.currentAudio || state.currentAudio.voice !== voice) {
+        const cached = await idbGet(audioCacheKey(state.currentStoryId, voice));
+        if (cached && cached.blob) {
+          setCurrentAudio(cached.blob, cached.timings || [], voice);
+        }
+      }
+    }
+  });
+
+  // Translate toggle
+  $('#translate-btn').addEventListener('click', () => {
+    state.showTranslation = !state.showTranslation;
+    syncTranslateButton();
+  });
+
+  function syncTranslateButton() {
+    const btn = $('#translate-btn');
+    const body = $('#story-body');
+    const hasTranslation = !!(state.story && state.story.translation);
+    btn.setAttribute('aria-pressed', state.showTranslation ? 'true' : 'false');
+    btn.style.display = hasTranslation ? '' : 'none';
+    if (body) body.classList.toggle('show-translation', !!state.showTranslation && hasTranslation);
+  }
+
   // ============== GENERATE STORY ==============
   const LOADING_MSGS = [
     'sharpening pencils',
@@ -1739,16 +2568,15 @@ footer.site {
   $('#generate-btn').addEventListener('click', () => generateStory());
   $('#regenerate-btn').addEventListener('click', () => generateStory());
   $('#new-story-btn').addEventListener('click', () => {
-    showView('setup');
+    stopAnyAudio();
     closePopover();
+    pushHash('setup');
+    showView('setup');
   });
 
   async function generateStory() {
     closePopover();
-    if (state.speaking) {
-      speechSynthesis.cancel();
-      state.speaking = false;
-    }
+    stopAnyAudio();
 
     showView('loading');
     const loadingMsg = $('#loading-msg');
@@ -1764,6 +2592,7 @@ footer.site {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          provider: state.provider,
           vocab: state.vocab,
           level: state.level,
           length: state.length,
@@ -1784,9 +2613,15 @@ footer.site {
       }
 
       state.story = data;
+      state.showTranslation = false;
+      releaseCachedAudio();
+      saveStory(data);
       buildGlossaryMap(data.glossary || []);
       renderStory(data);
+      syncTranslateButton();
       showView('reader');
+      pushHash('reader', state.currentStoryId);
+      loadCachedAudioForCurrentStory();
     } catch (err) {
       clearInterval(msgInterval);
       console.error(err);
@@ -1804,7 +2639,93 @@ footer.site {
     });
     if (view !== 'setup') $('#setup-error').innerHTML = '';
     if (view !== 'reader') $('#reader-error').innerHTML = '';
+    state.view = view;
+    // Scroll to top on view change so users always start at the top
+    if (window.scrollY > 0) window.scrollTo(0, 0);
   }
+
+  // ============== HASH-BASED NAVIGATION ==============
+  // Routes:
+  //   #              → setup (home)
+  //   #read          → reader view (current story)
+  //   #read/<id>     → reader view, loading the saved story with that id
+  function buildHash(view, storyId) {
+    if (view === 'reader') return storyId ? `#read/${storyId}` : '#read';
+    return '';
+  }
+
+  function pushHash(view, storyId) {
+    const target = buildHash(view, storyId);
+    const cur = location.hash || '';
+    if (target === cur) return;
+    if (!target && !cur) return;
+    try {
+      history.pushState(null, '', target || (location.pathname + location.search));
+    } catch {}
+  }
+
+  function replaceHash(view, storyId) {
+    const target = buildHash(view, storyId);
+    const cur = location.hash || '';
+    if (target === cur) return;
+    try {
+      history.replaceState(null, '', target || (location.pathname + location.search));
+    } catch {}
+  }
+
+  function parseHash() {
+    const h = (location.hash || '').replace(/^#\/?/, '');
+    if (!h) return { view: 'setup' };
+    const parts = h.split('/').filter(Boolean);
+    if (parts[0] === 'read') return { view: 'reader', storyId: parts[1] || null };
+    return { view: 'setup' };
+  }
+
+  // Apply whatever the current URL hash says (used on load and on back/forward)
+  function applyRoute() {
+    const route = parseHash();
+    closePopover();
+    if (route.view === 'setup') {
+      stopAnyAudio();
+      showView('setup');
+      return;
+    }
+    if (route.view === 'reader') {
+      if (route.storyId) {
+        if (route.storyId === state.currentStoryId && state.story) {
+          showView('reader');
+          return;
+        }
+        const found = state.stories.find(s => s.id === route.storyId);
+        if (found) {
+          openStoryById(route.storyId, { skipHash: true });
+          return;
+        }
+        // Unknown id — fall back to home
+        replaceHash('setup');
+        showView('setup');
+        return;
+      }
+      if (state.story) { showView('reader'); return; }
+      replaceHash('setup');
+      showView('setup');
+    }
+  }
+
+  function goHome() {
+    stopAnyAudio();
+    closePopover();
+    closeStories();
+    closeLibrary();
+    pushHash('setup');
+    showView('setup');
+  }
+
+  window.addEventListener('popstate', applyRoute);
+  document.getElementById('brand-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    goHome();
+  });
 
   // ============== GLOSSARY MAP ==============
   function buildGlossaryMap(glossary) {
@@ -1832,12 +2753,14 @@ footer.site {
 
     const body = $('#story-body');
     body.innerHTML = '';
+    body.classList.toggle('show-translation', !!state.showTranslation);
 
     // Split into paragraphs (preserve user-supplied newlines)
     const paragraphs = data.story.split(/\n\s*\n+/).map(p => p.trim()).filter(Boolean);
+    const transParas = (data.translation || '').split(/\n\s*\n+/).map(p => p.trim()).filter(Boolean);
 
     let globalWordIdx = 0;
-    paragraphs.forEach(paraText => {
+    paragraphs.forEach((paraText, i) => {
       const p = document.createElement('p');
       // Walk through tokens
       let lastIdx = 0;
@@ -1862,7 +2785,25 @@ footer.site {
         p.appendChild(document.createTextNode(paraText.slice(lastIdx)));
       }
       body.appendChild(p);
+
+      // Matching English paragraph (if any)
+      if (transParas[i]) {
+        const tp = document.createElement('p');
+        tp.className = 'trans-p';
+        tp.textContent = transParas[i];
+        body.appendChild(tp);
+      }
     });
+
+    // If the translation had extra paragraphs (rare mismatch), append them
+    if (transParas.length > paragraphs.length) {
+      for (let i = paragraphs.length; i < transParas.length; i++) {
+        const tp = document.createElement('p');
+        tp.className = 'trans-p';
+        tp.textContent = transParas[i];
+        body.appendChild(tp);
+      }
+    }
 
     // Word count meta
     const wordCount = body.querySelectorAll('.w').length;
@@ -1870,6 +2811,9 @@ footer.site {
 
     // Mark any words already in the known set
     refreshKnownInStory();
+
+    // If we already have cached audio in memory for this story, annotate now
+    annotateSpansWithTimings();
 
     body.classList.add('fade-in');
     setTimeout(() => body.classList.remove('fade-in'), 600);
@@ -1938,6 +2882,7 @@ footer.site {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        provider: state.provider,
         word,
         context: state.story?.story?.slice(0, 800) || '',
       }),
@@ -1974,9 +2919,34 @@ footer.site {
   function openPopover(span) {
     popoverEl.classList.add('is-visible');
     positionPopover(span);
+    if (isMobileLayout()) {
+      // After the bottom sheet has measured itself, scroll the tapped word
+      // above it so the reader can see what they're looking up.
+      requestAnimationFrame(() => {
+        const wordRect = span.getBoundingClientRect();
+        const popRect = popoverEl.getBoundingClientRect();
+        const visibleBottom = window.innerHeight - popRect.height - 16;
+        if (wordRect.bottom > visibleBottom) {
+          window.scrollBy({ top: wordRect.bottom - visibleBottom, behavior: 'smooth' });
+        }
+      });
+    }
+  }
+
+  function isMobileLayout() {
+    return typeof window.matchMedia === 'function'
+      && window.matchMedia('(max-width: 720px)').matches;
   }
 
   function positionPopover(span) {
+    if (isMobileLayout()) {
+      // CSS bottom-sheet rules handle layout — clear any inline positioning
+      // left over from a desktop session.
+      popoverEl.style.top = '';
+      popoverEl.style.left = '';
+      popArrow.style.left = '';
+      return;
+    }
     const rect = span.getBoundingClientRect();
     const pRect = popoverEl.getBoundingClientRect();
 
@@ -2096,10 +3066,13 @@ footer.site {
   // Close button
   $('#pop-close').addEventListener('click', closePopover);
 
-  // Popover speak button
+  // Popover speak button — prefer cached recording so the user hears the
+  // exact same voice/intonation as the "Read aloud" recording.
   $('#pop-speak').addEventListener('click', (e) => {
     e.stopPropagation();
-    if (state.activeWord) speak(state.activeWord.dataset.word);
+    if (!state.activeWord) return;
+    if (speakWordFromCachedAudio(state.activeWord)) return;
+    speak(state.activeWord.dataset.word);
   });
 
   // Reposition on resize/scroll
@@ -2116,30 +3089,185 @@ footer.site {
   $('#play-btn').addEventListener('click', () => playStory());
   $('#stop-btn').addEventListener('click', () => stopStory());
 
-  function playStory() {
-    if (!state.story) return;
-    closePopover();
+  function getStoryText() {
+    // Use the original German story text, not innerText (which may include translations).
+    return state.story?.story || '';
+  }
 
-    // Build a clean text and a parallel map from char index → word span
-    const spans = Array.from($$('#story-body .w'));
-    const text = $('#story-body').innerText;
-    // Build cumulative char offsets for each word span by walking the body
-    const wordOffsets = computeWordOffsets(text, spans);
-
+  function showPlayingUI() {
     $('#play-btn').style.display = 'none';
     $('#stop-btn').style.display = 'inline-flex';
     state.speaking = true;
+  }
+
+  function showStoppedUI() {
+    $$('.w.is-speaking').forEach(s => s.classList.remove('is-speaking'));
+    $('#play-btn').style.display = 'inline-flex';
+    $('#stop-btn').style.display = 'none';
+    $('#play-btn').classList.remove('is-loading');
+    state.speaking = false;
+  }
+
+  function clearAudioListeners() {
+    if (!state.audioEl) return;
+    if (state._segListener) {
+      state.audioEl.removeEventListener('timeupdate', state._segListener);
+      state._segListener = null;
+    }
+    if (state._fullTimeListener) {
+      state.audioEl.removeEventListener('timeupdate', state._fullTimeListener);
+      state._fullTimeListener = null;
+    }
+    state.audioEl.onended = null;
+    state.audioEl.onerror = null;
+  }
+
+  function stopAnyAudio() {
+    if (typeof speechSynthesis !== 'undefined') {
+      try { speechSynthesis.cancel(); } catch {}
+    }
+    if (state.audioEl) {
+      try { state.audioEl.pause(); } catch {}
+    }
+    clearAudioListeners();
+    state.audioPlayMode = null;
+    showStoppedUI();
+  }
+
+  // Release the in-memory blob URL when switching stories or clearing cache.
+  function releaseCachedAudio() {
+    stopAnyAudio();
+    if (state.audioEl) {
+      try {
+        state.audioEl.removeAttribute('src');
+        state.audioEl.load();
+      } catch {}
+    }
+    if (state.currentAudio?.url) {
+      try { URL.revokeObjectURL(state.currentAudio.url); } catch {}
+    }
+    state.currentAudio = null;
+  }
+
+  function base64ToBlob(base64, mime) {
+    const bin = atob(base64);
+    const len = bin.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: mime || 'audio/mpeg' });
+  }
+
+  // ============== SPAN ↔ AUDIO TIMING MAPPING ==============
+  function normWord(s) {
+    return (s || '')
+      .toLowerCase()
+      .replace(/ß/g, 'ss')
+      .replace(/[^a-zäöü0-9]/g, '');
+  }
+
+  function matchSpansToTimings(spans, timings) {
+    const result = new Array(spans.length).fill(-1);
+    if (!timings || !timings.length) return result;
+    let ti = 0;
+    for (let si = 0; si < spans.length; si++) {
+      const sw = normWord(spans[si].textContent);
+      if (!sw) continue;
+      // Look ahead a few timings for a match (handles transcription drift)
+      let found = -1;
+      for (let k = 0; k < 5 && ti + k < timings.length; k++) {
+        if (normWord(timings[ti + k].word) === sw) { found = ti + k; break; }
+      }
+      if (found >= 0) {
+        result[si] = found;
+        ti = found + 1;
+      }
+    }
+    return result;
+  }
+
+  function annotateSpansWithTimings() {
+    const spans = Array.from($$('#story-body .w'));
+    if (!spans.length) return;
+    const timings = state.currentAudio?.timings || null;
+    if (!timings || !timings.length) {
+      spans.forEach(s => { delete s.dataset.tIdx; });
+      return;
+    }
+    const mapping = matchSpansToTimings(spans, timings);
+    spans.forEach((s, i) => {
+      if (mapping[i] >= 0) s.dataset.tIdx = String(mapping[i]);
+      else delete s.dataset.tIdx;
+    });
+  }
+
+  async function loadCachedAudioForCurrentStory() {
+    if (!state.currentStoryId) return;
+    // Prefer current voice, else any cached recording for this story.
+    const voice = state.ttsEngine && state.ttsEngine.startsWith('openai-')
+      ? state.ttsEngine.slice('openai-'.length)
+      : null;
+    let entry = null;
+    let entryKey = null;
+    if (voice) {
+      const k = audioCacheKey(state.currentStoryId, voice);
+      const v = await idbGet(k);
+      if (v) { entry = v; entryKey = k; }
+    }
+    if (!entry) {
+      const all = await idbAllEntries();
+      const prefix = `${state.currentStoryId}::`;
+      const matches = all.filter(e => typeof e.key === 'string' && e.key.startsWith(prefix));
+      matches.sort((a, b) => (b.value?.createdAt || 0) - (a.value?.createdAt || 0));
+      if (matches.length) { entry = matches[0].value; entryKey = matches[0].key; }
+    }
+    if (!entry || !entry.blob) return;
+    setCurrentAudio(entry.blob, entry.timings || [], entry.voice || (entryKey?.split('::')[1] ?? null));
+  }
+
+  function setCurrentAudio(blob, timings, voice) {
+    releaseCachedAudio();
+    const url = URL.createObjectURL(blob);
+    state.currentAudio = {
+      blob,
+      url,
+      timings: timings || [],
+      voice,
+      storyId: state.currentStoryId,
+    };
+    if (state.audioEl) {
+      state.audioEl.src = url;
+    }
+    annotateSpansWithTimings();
+  }
+
+  function playStory() {
+    if (!state.story) return;
+    closePopover();
+    stopAnyAudio();
+
+    if (state.ttsEngine && state.ttsEngine.startsWith('openai-')) {
+      const voice = state.ttsEngine.slice('openai-'.length);
+      playStoryOpenAI(voice);
+    } else {
+      playStoryBrowser();
+    }
+  }
+
+  function playStoryBrowser() {
+    const spans = Array.from($$('#story-body .w'));
+    const text = getStoryText();
+    const wordOffsets = computeWordOffsetsFromText(text, spans);
+
+    showPlayingUI();
 
     speak(text, {
       onboundary: (e) => {
         if (e.name !== 'word') return;
         const charIdx = e.charIndex;
-        // Find which span this char belongs to
         const span = findSpanForOffset(charIdx, wordOffsets);
         spans.forEach(s => s.classList.remove('is-speaking'));
         if (span) {
           span.classList.add('is-speaking');
-          // Scroll into view smoothly if needed
           const r = span.getBoundingClientRect();
           if (r.top < 80 || r.bottom > window.innerHeight - 80) {
             span.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2147,24 +3275,185 @@ footer.site {
         }
       },
       onend: () => {
-        spans.forEach(s => s.classList.remove('is-speaking'));
-        $('#play-btn').style.display = 'inline-flex';
-        $('#stop-btn').style.display = 'none';
-        state.speaking = false;
+        showStoppedUI();
       },
     });
   }
 
-  function stopStory() {
-    speechSynthesis.cancel();
-    $$('.w.is-speaking').forEach(s => s.classList.remove('is-speaking'));
-    $('#play-btn').style.display = 'inline-flex';
-    $('#stop-btn').style.display = 'none';
-    state.speaking = false;
+  async function playStoryOpenAI(voice) {
+    const text = getStoryText();
+    if (!text) return;
+
+    const playBtn = $('#play-btn');
+    const storyId = state.currentStoryId;
+    const cacheKey = storyId ? audioCacheKey(storyId, voice) : null;
+
+    // 1) If we already have the right audio in memory, just replay it.
+    if (state.currentAudio && state.currentAudio.storyId === storyId && state.currentAudio.voice === voice) {
+      playFullFromCurrentAudio();
+      return;
+    }
+
+    // 2) Look in IndexedDB.
+    if (cacheKey) {
+      const cached = await idbGet(cacheKey);
+      if (cached && cached.blob) {
+        setCurrentAudio(cached.blob, cached.timings || [], voice);
+        playFullFromCurrentAudio();
+        return;
+      }
+    }
+
+    // 3) Fetch fresh from /api/tts with timings.
+    playBtn.classList.add('is-loading');
+    playBtn.style.display = 'inline-flex';
+    state.speaking = true;
+
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice, speed: 0.95, withTimings: true, language: 'de' }),
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`TTS failed (${res.status}): ${errText.slice(0, 200)}`);
+      }
+      const data = await res.json();
+      const blob = base64ToBlob(data.audio, data.mime || 'audio/mpeg');
+      const timings = Array.isArray(data.timings) ? data.timings : [];
+      setCurrentAudio(blob, timings, voice);
+
+      if (cacheKey) {
+        await idbPut(cacheKey, {
+          blob,
+          timings,
+          voice,
+          storyId,
+          createdAt: Date.now(),
+        });
+        pruneAudioCache();
+      }
+
+      playBtn.classList.remove('is-loading');
+      playFullFromCurrentAudio();
+    } catch (err) {
+      console.error('OpenAI TTS error:', err);
+      playBtn.classList.remove('is-loading');
+      showStoppedUI();
+      const target = $('#reader-error');
+      target.innerHTML = `<div class="error"><strong>Could not play OpenAI voice.</strong><br/>${escapeHtml(err.message || String(err))}<br/><br/>Falling back to browser voice — try the "Read aloud" button again.</div>`;
+      state.ttsEngine = 'browser';
+      $('#tts-engine').value = 'browser';
+    }
   }
 
-  function computeWordOffsets(text, spans) {
-    // Walk through text, finding each span's word in order
+  function playFullFromCurrentAudio() {
+    const audio = state.audioEl;
+    if (!audio || !state.currentAudio) return;
+    clearAudioListeners();
+
+    const spans = Array.from($$('#story-body .w'));
+    const timings = state.currentAudio.timings || [];
+
+    showPlayingUI();
+    state.audioPlayMode = 'full';
+
+    // Highlight via audio.currentTime → matched span via dataset.tIdx
+    let lastSpan = null;
+    const onTime = () => {
+      if (!timings.length) return;
+      const t = audio.currentTime;
+      // Binary search would be nicer; linear is fine for hundreds of words
+      let active = null;
+      for (let i = 0; i < timings.length; i++) {
+        const w = timings[i];
+        if (t >= w.start && t < w.end) {
+          // Find span whose tIdx matches this timing index
+          const span = spans.find(s => Number(s.dataset.tIdx) === i);
+          if (span) { active = span; break; }
+        }
+        if (t < w.start) break;
+      }
+      if (active && active !== lastSpan) {
+        spans.forEach(s => s.classList.remove('is-speaking'));
+        active.classList.add('is-speaking');
+        const r = active.getBoundingClientRect();
+        if (r.top < 80 || r.bottom > window.innerHeight - 80) {
+          active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        lastSpan = active;
+      }
+    };
+
+    audio.onended = () => {
+      clearAudioListeners();
+      state.audioPlayMode = null;
+      showStoppedUI();
+    };
+    audio.onerror = () => {
+      clearAudioListeners();
+      state.audioPlayMode = null;
+      showStoppedUI();
+    };
+    if (timings.length) {
+      audio.addEventListener('timeupdate', onTime);
+      state._fullTimeListener = onTime;
+    }
+    audio.currentTime = 0;
+    audio.play().catch(err => {
+      console.warn('audio.play failed:', err);
+      showStoppedUI();
+    });
+  }
+
+  // Play just one word's segment from the cached recording.
+  // Returns true if it played; false if no cache/timing for this word.
+  function speakWordFromCachedAudio(span) {
+    if (!state.currentAudio || !state.audioEl) return false;
+    const idx = Number(span.dataset.tIdx);
+    if (!Number.isFinite(idx) || idx < 0) return false;
+    const timing = state.currentAudio.timings?.[idx];
+    if (!timing) return false;
+
+    // Stop any current playback (full or other segment), keep the src.
+    if (typeof speechSynthesis !== 'undefined') {
+      try { speechSynthesis.cancel(); } catch {}
+    }
+    clearAudioListeners();
+    const audio = state.audioEl;
+    try { audio.pause(); } catch {}
+    if (state.audioPlayMode === 'full') {
+      // Full playback was running — return UI to stopped.
+      showStoppedUI();
+    }
+    state.audioPlayMode = 'segment';
+
+    // Play a window centered on the word: 2s of context before and after.
+    const CONTEXT_SECONDS = 2;
+    const startAt = Math.max(0, timing.start - CONTEXT_SECONDS);
+    const stopAt = timing.end + CONTEXT_SECONDS;
+    const listener = () => {
+      if (audio.currentTime >= stopAt) {
+        try { audio.pause(); } catch {}
+        audio.removeEventListener('timeupdate', listener);
+        state._segListener = null;
+        state.audioPlayMode = null;
+      }
+    };
+    state._segListener = listener;
+    audio.addEventListener('timeupdate', listener);
+
+    audio.currentTime = startAt;
+    audio.play().catch(err => console.warn('segment play failed:', err));
+    return true;
+  }
+
+  function stopStory() {
+    stopAnyAudio();
+  }
+
+  function computeWordOffsetsFromText(text, spans) {
     const offsets = [];
     let cursor = 0;
     spans.forEach(span => {
@@ -2190,6 +3479,9 @@ footer.site {
     }
     return null;
   }
+
+  // Apply the URL hash on initial load (e.g. someone bookmarked #read/<id>)
+  applyRoute();
 
   // ============== ESCAPE HELPER ==============
   function escapeHtml(s) {

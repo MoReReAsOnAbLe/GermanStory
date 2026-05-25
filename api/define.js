@@ -1,8 +1,22 @@
 // /api/define.js — Vercel serverless function
 // On-demand definition for a single German word, given optional surrounding context.
 // Uses a smaller/cheaper model — this is called once per word click.
+// Supports OpenAI and xAI Grok providers (request body: provider: 'openai' | 'grok').
 
-const MODEL = process.env.OPENAI_DEFINE_MODEL || 'gpt-4o-mini';
+const PROVIDERS = {
+  openai: {
+    label: 'OpenAI',
+    endpoint: 'https://api.openai.com/v1/chat/completions',
+    envKey: 'OPENAI_API_KEY',
+    defaultModel: process.env.OPENAI_DEFINE_MODEL || 'gpt-4o-mini',
+  },
+  grok: {
+    label: 'Grok (xAI)',
+    endpoint: 'https://api.x.ai/v1/chat/completions',
+    envKey: 'XAI_API_KEY',
+    defaultModel: process.env.XAI_DEFINE_MODEL || 'grok-3-mini',
+  },
+};
 
 const DEFINE_SCHEMA = {
   name: 'german_word_definition',
@@ -29,16 +43,21 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return res.status(500).send('OPENAI_API_KEY is not set in environment variables.');
-  }
-
   let body = req.body;
   if (typeof body === 'string') {
     try { body = JSON.parse(body); } catch { body = {}; }
   }
   body = body || {};
+
+  const providerKey = PROVIDERS[body.provider] ? body.provider : 'openai';
+  const provider = PROVIDERS[providerKey];
+  const apiKey = process.env[provider.envKey];
+  if (!apiKey) {
+    return res.status(500).send(`${provider.envKey} is not set in environment variables.`);
+  }
+  const model = typeof body.model === 'string' && body.model.trim()
+    ? body.model.trim()
+    : provider.defaultModel;
 
   const word = typeof body.word === 'string' ? body.word.slice(0, 80).trim() : '';
   const context = typeof body.context === 'string' ? body.context.slice(0, 1200) : '';
@@ -59,14 +78,14 @@ Be specific to the context if provided. Do not invent definitions for nonsense i
     : `Word: ${word}`;
 
   try {
-    const oaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    const apiRes = await fetch(provider.endpoint, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: MODEL,
+        model,
         temperature: 0.2,
         messages: [
           { role: 'system', content: systemPrompt },
@@ -79,19 +98,19 @@ Be specific to the context if provided. Do not invent definitions for nonsense i
       }),
     });
 
-    if (!oaiRes.ok) {
-      const errText = await oaiRes.text();
-      console.error('OpenAI error (define):', oaiRes.status, errText);
-      return res.status(502).send(`OpenAI API error: ${errText.slice(0, 400)}`);
+    if (!apiRes.ok) {
+      const errText = await apiRes.text();
+      console.error(`${provider.label} error (define):`, apiRes.status, errText);
+      return res.status(502).send(`${provider.label} API error: ${errText.slice(0, 400)}`);
     }
 
-    const data = await oaiRes.json();
+    const data = await apiRes.json();
     const content = data?.choices?.[0]?.message?.content;
-    if (!content) return res.status(502).send('OpenAI returned empty content.');
+    if (!content) return res.status(502).send(`${provider.label} returned empty content.`);
 
     let parsed;
     try { parsed = JSON.parse(content); }
-    catch { return res.status(502).send('OpenAI returned non-JSON content.'); }
+    catch { return res.status(502).send(`${provider.label} returned non-JSON content.`); }
 
     return res.status(200).json(parsed);
   } catch (err) {
