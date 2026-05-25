@@ -1528,6 +1528,10 @@ footer.site {
     ttsEngine: 'browser', // 'browser' | 'openai-<voice>'
     audioEl: null,
     showTranslation: false,
+    currentAudio: null,   // { blob, url, timings, voice, storyId }
+    audioPlayMode: null,  // 'full' | 'segment' | null
+    _segListener: null,
+    _fullTimeListener: null,
   };
 
   const STORAGE_KEYS = {
@@ -1537,6 +1541,100 @@ footer.site {
   };
 
   const MAX_SAVED_STORIES = 50;
+  const MAX_CACHED_AUDIOS = 25;
+
+  // ============== INDEXED DB FOR CACHED AUDIO ==============
+  const IDB_NAME = 'lesehaus';
+  const IDB_STORE = 'audio';
+  const IDB_VERSION = 1;
+  let _dbPromise = null;
+
+  function openDB() {
+    if (_dbPromise) return _dbPromise;
+    if (typeof indexedDB === 'undefined') {
+      _dbPromise = Promise.reject(new Error('IndexedDB not available'));
+      return _dbPromise;
+    }
+    _dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return _dbPromise;
+  }
+
+  async function idbGet(key) {
+    try {
+      const db = await openDB();
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const r = tx.objectStore(IDB_STORE).get(key);
+        r.onsuccess = () => resolve(r.result || null);
+        r.onerror = () => reject(r.error);
+      });
+    } catch { return null; }
+  }
+
+  async function idbPut(key, value) {
+    try {
+      const db = await openDB();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(value, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (e) { console.warn('idbPut failed:', e); }
+  }
+
+  async function idbDelete(key) {
+    try {
+      const db = await openDB();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).delete(key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (e) { console.warn('idbDelete failed:', e); }
+  }
+
+  async function idbAllEntries() {
+    try {
+      const db = await openDB();
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const store = tx.objectStore(IDB_STORE);
+        const keysReq = store.getAllKeys();
+        const valsReq = store.getAll();
+        keysReq.onsuccess = () => {
+          valsReq.onsuccess = () => {
+            const keys = keysReq.result || [];
+            const vals = valsReq.result || [];
+            resolve(keys.map((k, i) => ({ key: k, value: vals[i] })));
+          };
+        };
+        keysReq.onerror = () => reject(keysReq.error);
+        valsReq.onerror = () => reject(valsReq.error);
+      });
+    } catch { return []; }
+  }
+
+  async function pruneAudioCache() {
+    const entries = await idbAllEntries();
+    if (entries.length <= MAX_CACHED_AUDIOS) return;
+    entries.sort((a, b) => (b.value?.createdAt || 0) - (a.value?.createdAt || 0));
+    const toDelete = entries.slice(MAX_CACHED_AUDIOS);
+    for (const e of toDelete) await idbDelete(e.key);
+  }
+
+  function audioCacheKey(storyId, voice) {
+    return `${storyId}::${voice || 'default'}`;
+  }
 
   // ============== UTILITIES ==============
   const $ = (sel) => document.querySelector(sel);
@@ -1819,16 +1917,26 @@ footer.site {
     return id;
   }
 
-  function deleteStory(id) {
+  async function deleteStory(id) {
     state.stories = state.stories.filter(s => s.id !== id);
-    if (state.currentStoryId === id) state.currentStoryId = null;
+    if (state.currentStoryId === id) {
+      releaseCachedAudio();
+      state.currentStoryId = null;
+    }
     persistStories();
     updateStoriesCount();
+    // Also drop any cached audio for this story (any voice)
+    const all = await idbAllEntries();
+    const prefix = `${id}::`;
+    for (const e of all) {
+      if (typeof e.key === 'string' && e.key.startsWith(prefix)) await idbDelete(e.key);
+    }
   }
 
   function openStoryById(id) {
     const s = state.stories.find(x => x.id === id);
     if (!s) return;
+    releaseCachedAudio();
     state.currentStoryId = id;
     state.level = s.level || state.level;
     state.vocab = (typeof s.vocab === 'number') ? s.vocab : state.vocab;
@@ -1836,11 +1944,11 @@ footer.site {
     state.topic = s.topic || '';
     state.story = { title: s.title, story: s.story, translation: s.translation || '', glossary: s.glossary || [] };
     state.showTranslation = false;
-    stopAnyAudio();
     buildGlossaryMap(s.glossary || []);
     renderStory(state.story);
     syncTranslateButton();
     showView('reader');
+    loadCachedAudioForCurrentStory();
   }
 
   function updateStoriesCount() {
@@ -2010,15 +2118,19 @@ footer.site {
   });
 
   // Stories clear all
-  document.getElementById('stories-clear').addEventListener('click', () => {
+  document.getElementById('stories-clear').addEventListener('click', async () => {
     if (state.stories.length === 0) return;
-    const ok = confirm(`Delete all ${state.stories.length} saved stories? This cannot be undone.`);
+    const ok = confirm(`Delete all ${state.stories.length} saved stories and their cached audio? This cannot be undone.`);
     if (!ok) return;
     state.stories = [];
+    releaseCachedAudio();
     state.currentStoryId = null;
     persistStories();
     updateStoriesCount();
     renderStoriesList(document.getElementById('stories-search').value);
+    // Wipe cached audio too
+    const all = await idbAllEntries();
+    for (const e of all) await idbDelete(e.key);
   });
 
   // Stories export
@@ -2148,8 +2260,17 @@ footer.site {
   });
 
   // TTS engine
-  $('#tts-engine').addEventListener('change', (e) => {
+  $('#tts-engine').addEventListener('change', async (e) => {
     state.ttsEngine = e.target.value;
+    if (state.ttsEngine.startsWith('openai-') && state.currentStoryId) {
+      const voice = state.ttsEngine.slice('openai-'.length);
+      if (!state.currentAudio || state.currentAudio.voice !== voice) {
+        const cached = await idbGet(audioCacheKey(state.currentStoryId, voice));
+        if (cached && cached.blob) {
+          setCurrentAudio(cached.blob, cached.timings || [], voice);
+        }
+      }
+    }
   });
 
   // Translate toggle
@@ -2224,11 +2345,13 @@ footer.site {
 
       state.story = data;
       state.showTranslation = false;
+      releaseCachedAudio();
       saveStory(data);
       buildGlossaryMap(data.glossary || []);
       renderStory(data);
       syncTranslateButton();
       showView('reader');
+      loadCachedAudioForCurrentStory();
     } catch (err) {
       clearInterval(msgInterval);
       console.error(err);
@@ -2332,6 +2455,9 @@ footer.site {
 
     // Mark any words already in the known set
     refreshKnownInStory();
+
+    // If we already have cached audio in memory for this story, annotate now
+    annotateSpansWithTimings();
 
     body.classList.add('fade-in');
     setTimeout(() => body.classList.remove('fade-in'), 600);
@@ -2558,10 +2684,13 @@ footer.site {
   // Close button
   $('#pop-close').addEventListener('click', closePopover);
 
-  // Popover speak button
+  // Popover speak button — prefer cached recording so the user hears the
+  // exact same voice/intonation as the "Read aloud" recording.
   $('#pop-speak').addEventListener('click', (e) => {
     e.stopPropagation();
-    if (state.activeWord) speak(state.activeWord.dataset.word);
+    if (!state.activeWord) return;
+    if (speakWordFromCachedAudio(state.activeWord)) return;
+    speak(state.activeWord.dataset.word);
   });
 
   // Reposition on resize/scroll
@@ -2597,18 +2726,136 @@ footer.site {
     state.speaking = false;
   }
 
+  function clearAudioListeners() {
+    if (!state.audioEl) return;
+    if (state._segListener) {
+      state.audioEl.removeEventListener('timeupdate', state._segListener);
+      state._segListener = null;
+    }
+    if (state._fullTimeListener) {
+      state.audioEl.removeEventListener('timeupdate', state._fullTimeListener);
+      state._fullTimeListener = null;
+    }
+    state.audioEl.onended = null;
+    state.audioEl.onerror = null;
+  }
+
   function stopAnyAudio() {
     if (typeof speechSynthesis !== 'undefined') {
       try { speechSynthesis.cancel(); } catch {}
     }
     if (state.audioEl) {
+      try { state.audioEl.pause(); } catch {}
+    }
+    clearAudioListeners();
+    state.audioPlayMode = null;
+    showStoppedUI();
+  }
+
+  // Release the in-memory blob URL when switching stories or clearing cache.
+  function releaseCachedAudio() {
+    stopAnyAudio();
+    if (state.audioEl) {
       try {
-        state.audioEl.pause();
         state.audioEl.removeAttribute('src');
         state.audioEl.load();
       } catch {}
     }
-    showStoppedUI();
+    if (state.currentAudio?.url) {
+      try { URL.revokeObjectURL(state.currentAudio.url); } catch {}
+    }
+    state.currentAudio = null;
+  }
+
+  function base64ToBlob(base64, mime) {
+    const bin = atob(base64);
+    const len = bin.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: mime || 'audio/mpeg' });
+  }
+
+  // ============== SPAN ↔ AUDIO TIMING MAPPING ==============
+  function normWord(s) {
+    return (s || '')
+      .toLowerCase()
+      .replace(/ß/g, 'ss')
+      .replace(/[^a-zäöü0-9]/g, '');
+  }
+
+  function matchSpansToTimings(spans, timings) {
+    const result = new Array(spans.length).fill(-1);
+    if (!timings || !timings.length) return result;
+    let ti = 0;
+    for (let si = 0; si < spans.length; si++) {
+      const sw = normWord(spans[si].textContent);
+      if (!sw) continue;
+      // Look ahead a few timings for a match (handles transcription drift)
+      let found = -1;
+      for (let k = 0; k < 5 && ti + k < timings.length; k++) {
+        if (normWord(timings[ti + k].word) === sw) { found = ti + k; break; }
+      }
+      if (found >= 0) {
+        result[si] = found;
+        ti = found + 1;
+      }
+    }
+    return result;
+  }
+
+  function annotateSpansWithTimings() {
+    const spans = Array.from($$('#story-body .w'));
+    if (!spans.length) return;
+    const timings = state.currentAudio?.timings || null;
+    if (!timings || !timings.length) {
+      spans.forEach(s => { delete s.dataset.tIdx; });
+      return;
+    }
+    const mapping = matchSpansToTimings(spans, timings);
+    spans.forEach((s, i) => {
+      if (mapping[i] >= 0) s.dataset.tIdx = String(mapping[i]);
+      else delete s.dataset.tIdx;
+    });
+  }
+
+  async function loadCachedAudioForCurrentStory() {
+    if (!state.currentStoryId) return;
+    // Prefer current voice, else any cached recording for this story.
+    const voice = state.ttsEngine && state.ttsEngine.startsWith('openai-')
+      ? state.ttsEngine.slice('openai-'.length)
+      : null;
+    let entry = null;
+    let entryKey = null;
+    if (voice) {
+      const k = audioCacheKey(state.currentStoryId, voice);
+      const v = await idbGet(k);
+      if (v) { entry = v; entryKey = k; }
+    }
+    if (!entry) {
+      const all = await idbAllEntries();
+      const prefix = `${state.currentStoryId}::`;
+      const matches = all.filter(e => typeof e.key === 'string' && e.key.startsWith(prefix));
+      matches.sort((a, b) => (b.value?.createdAt || 0) - (a.value?.createdAt || 0));
+      if (matches.length) { entry = matches[0].value; entryKey = matches[0].key; }
+    }
+    if (!entry || !entry.blob) return;
+    setCurrentAudio(entry.blob, entry.timings || [], entry.voice || (entryKey?.split('::')[1] ?? null));
+  }
+
+  function setCurrentAudio(blob, timings, voice) {
+    releaseCachedAudio();
+    const url = URL.createObjectURL(blob);
+    state.currentAudio = {
+      blob,
+      url,
+      timings: timings || [],
+      voice,
+      storyId: state.currentStoryId,
+    };
+    if (state.audioEl) {
+      state.audioEl.src = url;
+    }
+    annotateSpansWithTimings();
   }
 
   function playStory() {
@@ -2656,6 +2903,26 @@ footer.site {
     if (!text) return;
 
     const playBtn = $('#play-btn');
+    const storyId = state.currentStoryId;
+    const cacheKey = storyId ? audioCacheKey(storyId, voice) : null;
+
+    // 1) If we already have the right audio in memory, just replay it.
+    if (state.currentAudio && state.currentAudio.storyId === storyId && state.currentAudio.voice === voice) {
+      playFullFromCurrentAudio();
+      return;
+    }
+
+    // 2) Look in IndexedDB.
+    if (cacheKey) {
+      const cached = await idbGet(cacheKey);
+      if (cached && cached.blob) {
+        setCurrentAudio(cached.blob, cached.timings || [], voice);
+        playFullFromCurrentAudio();
+        return;
+      }
+    }
+
+    // 3) Fetch fresh from /api/tts with timings.
     playBtn.classList.add('is-loading');
     playBtn.style.display = 'inline-flex';
     state.speaking = true;
@@ -2664,27 +2931,30 @@ footer.site {
       const res = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voice, speed: 0.95 }),
+        body: JSON.stringify({ text, voice, speed: 0.95, withTimings: true, language: 'de' }),
       });
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(`TTS failed (${res.status}): ${errText.slice(0, 200)}`);
       }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = state.audioEl;
-      audio.src = url;
-      audio.onended = () => {
-        URL.revokeObjectURL(url);
-        showStoppedUI();
-      };
-      audio.onerror = () => {
-        URL.revokeObjectURL(url);
-        showStoppedUI();
-      };
+      const data = await res.json();
+      const blob = base64ToBlob(data.audio, data.mime || 'audio/mpeg');
+      const timings = Array.isArray(data.timings) ? data.timings : [];
+      setCurrentAudio(blob, timings, voice);
+
+      if (cacheKey) {
+        await idbPut(cacheKey, {
+          blob,
+          timings,
+          voice,
+          storyId,
+          createdAt: Date.now(),
+        });
+        pruneAudioCache();
+      }
+
       playBtn.classList.remove('is-loading');
-      showPlayingUI();
-      await audio.play();
+      playFullFromCurrentAudio();
     } catch (err) {
       console.error('OpenAI TTS error:', err);
       playBtn.classList.remove('is-loading');
@@ -2694,6 +2964,104 @@ footer.site {
       state.ttsEngine = 'browser';
       $('#tts-engine').value = 'browser';
     }
+  }
+
+  function playFullFromCurrentAudio() {
+    const audio = state.audioEl;
+    if (!audio || !state.currentAudio) return;
+    clearAudioListeners();
+
+    const spans = Array.from($$('#story-body .w'));
+    const timings = state.currentAudio.timings || [];
+
+    showPlayingUI();
+    state.audioPlayMode = 'full';
+
+    // Highlight via audio.currentTime → matched span via dataset.tIdx
+    let lastSpan = null;
+    const onTime = () => {
+      if (!timings.length) return;
+      const t = audio.currentTime;
+      // Binary search would be nicer; linear is fine for hundreds of words
+      let active = null;
+      for (let i = 0; i < timings.length; i++) {
+        const w = timings[i];
+        if (t >= w.start && t < w.end) {
+          // Find span whose tIdx matches this timing index
+          const span = spans.find(s => Number(s.dataset.tIdx) === i);
+          if (span) { active = span; break; }
+        }
+        if (t < w.start) break;
+      }
+      if (active && active !== lastSpan) {
+        spans.forEach(s => s.classList.remove('is-speaking'));
+        active.classList.add('is-speaking');
+        const r = active.getBoundingClientRect();
+        if (r.top < 80 || r.bottom > window.innerHeight - 80) {
+          active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        lastSpan = active;
+      }
+    };
+
+    audio.onended = () => {
+      clearAudioListeners();
+      state.audioPlayMode = null;
+      showStoppedUI();
+    };
+    audio.onerror = () => {
+      clearAudioListeners();
+      state.audioPlayMode = null;
+      showStoppedUI();
+    };
+    if (timings.length) {
+      audio.addEventListener('timeupdate', onTime);
+      state._fullTimeListener = onTime;
+    }
+    audio.currentTime = 0;
+    audio.play().catch(err => {
+      console.warn('audio.play failed:', err);
+      showStoppedUI();
+    });
+  }
+
+  // Play just one word's segment from the cached recording.
+  // Returns true if it played; false if no cache/timing for this word.
+  function speakWordFromCachedAudio(span) {
+    if (!state.currentAudio || !state.audioEl) return false;
+    const idx = Number(span.dataset.tIdx);
+    if (!Number.isFinite(idx) || idx < 0) return false;
+    const timing = state.currentAudio.timings?.[idx];
+    if (!timing) return false;
+
+    // Stop any current playback (full or other segment), keep the src.
+    if (typeof speechSynthesis !== 'undefined') {
+      try { speechSynthesis.cancel(); } catch {}
+    }
+    clearAudioListeners();
+    const audio = state.audioEl;
+    try { audio.pause(); } catch {}
+    if (state.audioPlayMode === 'full') {
+      // Full playback was running — return UI to stopped.
+      showStoppedUI();
+    }
+    state.audioPlayMode = 'segment';
+
+    const stopAt = timing.end + 0.06;
+    const listener = () => {
+      if (audio.currentTime >= stopAt) {
+        try { audio.pause(); } catch {}
+        audio.removeEventListener('timeupdate', listener);
+        state._segListener = null;
+        state.audioPlayMode = null;
+      }
+    };
+    state._segListener = listener;
+    audio.addEventListener('timeupdate', listener);
+
+    audio.currentTime = Math.max(0, timing.start);
+    audio.play().catch(err => console.warn('segment play failed:', err));
+    return true;
   }
 
   function stopStory() {
