@@ -3290,7 +3290,10 @@ footer.site {
     }
     state.audioPlayMode = 'segment';
 
-    const stopAt = timing.end + 0.06;
+    // Play a window centered on the word: 2s of context before and after.
+    const CONTEXT_SECONDS = 2;
+    const startAt = Math.max(0, timing.start - CONTEXT_SECONDS);
+    const stopAt = timing.end + CONTEXT_SECONDS;
     const listener = () => {
       if (audio.currentTime >= stopAt) {
         try { audio.pause(); } catch {}
@@ -3302,7 +3305,7 @@ footer.site {
     state._segListener = listener;
     audio.addEventListener('timeupdate', listener);
 
-    audio.currentTime = Math.max(0, timing.start);
+    audio.currentTime = startAt;
     audio.play().catch(err => console.warn('segment play failed:', err));
     return true;
   }
