@@ -138,7 +138,13 @@ header.site::after {
   display: flex;
   align-items: baseline;
   gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
+.brand:hover .brand-mark { transform: rotate(-3deg); }
+.brand-mark { transition: transform 0.2s ease; }
 
 .brand-mark {
   font-family: 'Fraunces', serif;
@@ -1481,10 +1487,10 @@ footer.site {
 <div class="container">
 
   <header class="site fade-in">
-    <div class="brand">
+    <a class="brand" id="brand-link" href="#" title="Home">
       <span class="brand-mark">L</span>
       <h1>Lesehaus</h1>
-    </div>
+    </a>
     <div class="header-right">
       <div class="header-tools">
         <button class="tool-btn has-zero" id="stories-btn" title="Browse your saved stories">
@@ -1528,6 +1534,17 @@ footer.site {
       </p>
 
       <div class="control-grid">
+
+        <div class="field">
+          <div class="field-label">
+            <span>AI provider</span>
+          </div>
+          <div class="segmented" data-control="provider">
+            <button data-value="openai" aria-pressed="true">OpenAI</button>
+            <button data-value="grok">Grok (xAI)</button>
+          </div>
+          <p class="field-hint" data-hint="provider">GPT-4o — high-quality storytelling</p>
+        </div>
 
         <div class="field">
           <div class="field-label">
@@ -1732,6 +1749,8 @@ footer.site {
     level: 'A2',
     length: 'medium',
     topic: '',
+    provider: 'openai',
+    view: 'setup',
     defMode: 'glossary',
     story: null,        // { title, story, glossary: [{word, lemma, pos, translation, note}] }
     glossaryMap: null,  // Map<string, glossaryEntry> keyed by lowercase word AND lemma
@@ -1756,6 +1775,7 @@ footer.site {
     theme: 'lesehaus.theme',
     known: 'lesehaus.known.v1',
     stories: 'lesehaus.stories.v1',
+    provider: 'lesehaus.provider',
   };
 
   const MAX_SAVED_STORIES = 50;
@@ -1859,6 +1879,10 @@ footer.site {
   const $$ = (sel) => document.querySelectorAll(sel);
 
   const HINTS = {
+    provider: {
+      openai: 'GPT-4o — high-quality storytelling (uses OPENAI_API_KEY)',
+      grok: 'Grok-4 — xAI, distinctive voice (uses XAI_API_KEY)',
+    },
     vocab: {
       1000: 'Top 1,000 — beginner core vocabulary',
       2000: 'Top 2,000 — early conversational range',
@@ -2151,9 +2175,10 @@ footer.site {
     }
   }
 
-  function openStoryById(id) {
+  function openStoryById(id, opts) {
     const s = state.stories.find(x => x.id === id);
     if (!s) return;
+    opts = opts || {};
     releaseCachedAudio();
     state.currentStoryId = id;
     state.level = s.level || state.level;
@@ -2166,6 +2191,7 @@ footer.site {
     renderStory(state.story);
     syncTranslateButton();
     showView('reader');
+    if (!opts.skipHash) pushHash('reader', id);
     loadCachedAudioForCurrentStory();
   }
 
@@ -2440,7 +2466,8 @@ footer.site {
   }
 
   // ============== SEGMENTED CONTROLS ==============
-  function setupSegmented(name) {
+  function setupSegmented(name, opts) {
+    opts = opts || {};
     const group = document.querySelector(`[data-control="${name}"]`);
     if (!group) return;
     const hint = document.querySelector(`[data-hint="${name}"]`);
@@ -2453,9 +2480,31 @@ footer.site {
       // Coerce vocab to number
       state[name] = (name === 'vocab') ? Number(value) : value;
       if (hint) hint.textContent = HINTS[name][state[name]] || '';
+      if (opts.onChange) opts.onChange(state[name]);
     });
   }
 
+  function loadProvider() {
+    try {
+      const v = localStorage.getItem(STORAGE_KEYS.provider);
+      if (v !== 'openai' && v !== 'grok') return;
+      state.provider = v;
+      const group = document.querySelector('[data-control="provider"]');
+      if (group) {
+        group.querySelectorAll('button').forEach(b => {
+          if (b.dataset.value === v) b.setAttribute('aria-pressed', 'true');
+          else b.removeAttribute('aria-pressed');
+        });
+      }
+      const hint = document.querySelector('[data-hint="provider"]');
+      if (hint) hint.textContent = HINTS.provider[v] || '';
+    } catch {}
+  }
+  loadProvider();
+
+  setupSegmented('provider', { onChange: (v) => {
+    try { localStorage.setItem(STORAGE_KEYS.provider, v); } catch {}
+  }});
   setupSegmented('vocab');
   setupSegmented('level');
   setupSegmented('length');
@@ -2520,8 +2569,9 @@ footer.site {
   $('#regenerate-btn').addEventListener('click', () => generateStory());
   $('#new-story-btn').addEventListener('click', () => {
     stopAnyAudio();
-    showView('setup');
     closePopover();
+    pushHash('setup');
+    showView('setup');
   });
 
   async function generateStory() {
@@ -2542,6 +2592,7 @@ footer.site {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          provider: state.provider,
           vocab: state.vocab,
           level: state.level,
           length: state.length,
@@ -2569,6 +2620,7 @@ footer.site {
       renderStory(data);
       syncTranslateButton();
       showView('reader');
+      pushHash('reader', state.currentStoryId);
       loadCachedAudioForCurrentStory();
     } catch (err) {
       clearInterval(msgInterval);
@@ -2587,7 +2639,93 @@ footer.site {
     });
     if (view !== 'setup') $('#setup-error').innerHTML = '';
     if (view !== 'reader') $('#reader-error').innerHTML = '';
+    state.view = view;
+    // Scroll to top on view change so users always start at the top
+    if (window.scrollY > 0) window.scrollTo(0, 0);
   }
+
+  // ============== HASH-BASED NAVIGATION ==============
+  // Routes:
+  //   #              → setup (home)
+  //   #read          → reader view (current story)
+  //   #read/<id>     → reader view, loading the saved story with that id
+  function buildHash(view, storyId) {
+    if (view === 'reader') return storyId ? `#read/${storyId}` : '#read';
+    return '';
+  }
+
+  function pushHash(view, storyId) {
+    const target = buildHash(view, storyId);
+    const cur = location.hash || '';
+    if (target === cur) return;
+    if (!target && !cur) return;
+    try {
+      history.pushState(null, '', target || (location.pathname + location.search));
+    } catch {}
+  }
+
+  function replaceHash(view, storyId) {
+    const target = buildHash(view, storyId);
+    const cur = location.hash || '';
+    if (target === cur) return;
+    try {
+      history.replaceState(null, '', target || (location.pathname + location.search));
+    } catch {}
+  }
+
+  function parseHash() {
+    const h = (location.hash || '').replace(/^#\/?/, '');
+    if (!h) return { view: 'setup' };
+    const parts = h.split('/').filter(Boolean);
+    if (parts[0] === 'read') return { view: 'reader', storyId: parts[1] || null };
+    return { view: 'setup' };
+  }
+
+  // Apply whatever the current URL hash says (used on load and on back/forward)
+  function applyRoute() {
+    const route = parseHash();
+    closePopover();
+    if (route.view === 'setup') {
+      stopAnyAudio();
+      showView('setup');
+      return;
+    }
+    if (route.view === 'reader') {
+      if (route.storyId) {
+        if (route.storyId === state.currentStoryId && state.story) {
+          showView('reader');
+          return;
+        }
+        const found = state.stories.find(s => s.id === route.storyId);
+        if (found) {
+          openStoryById(route.storyId, { skipHash: true });
+          return;
+        }
+        // Unknown id — fall back to home
+        replaceHash('setup');
+        showView('setup');
+        return;
+      }
+      if (state.story) { showView('reader'); return; }
+      replaceHash('setup');
+      showView('setup');
+    }
+  }
+
+  function goHome() {
+    stopAnyAudio();
+    closePopover();
+    closeStories();
+    closeLibrary();
+    pushHash('setup');
+    showView('setup');
+  }
+
+  window.addEventListener('popstate', applyRoute);
+  document.getElementById('brand-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    goHome();
+  });
 
   // ============== GLOSSARY MAP ==============
   function buildGlossaryMap(glossary) {
@@ -2744,6 +2882,7 @@ footer.site {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        provider: state.provider,
         word,
         context: state.story?.story?.slice(0, 800) || '',
       }),
@@ -3340,6 +3479,9 @@ footer.site {
     }
     return null;
   }
+
+  // Apply the URL hash on initial load (e.g. someone bookmarked #read/<id>)
+  applyRoute();
 
   // ============== ESCAPE HELPER ==============
   function escapeHtml(s) {
