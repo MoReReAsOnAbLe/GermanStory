@@ -32,6 +32,10 @@ const STORY_SCHEMA = {
         type: 'string',
         description: 'The full German story. Paragraphs separated by blank lines (\\n\\n).',
       },
+      translation: {
+        type: 'string',
+        description: 'A natural, faithful English translation of the full story. Use the SAME number of paragraphs as the German story, separated by blank lines (\\n\\n), so paragraphs align one-to-one.',
+      },
       glossary: {
         type: 'array',
         description: 'Definitions for words in the story that may challenge the learner at this level.',
@@ -64,7 +68,7 @@ const STORY_SCHEMA = {
         },
       },
     },
-    required: ['title', 'story', 'glossary'],
+    required: ['title', 'story', 'translation', 'glossary'],
     additionalProperties: false,
   },
 };
@@ -118,6 +122,11 @@ Constraints for this request:
 - ${vocabLine}
 - Length target: approximately ${wordTarget} German words (within ±20%).
 - ${topicLine}
+
+Translation requirements:
+- Provide a natural, idiomatic English translation that reads like real English — not a word-for-word gloss.
+- Preserve the tone, voice, and register of the German.
+- IMPORTANT: Use exactly the same paragraph structure. If the German story has 4 paragraphs separated by blank lines, the English translation must also have 4 paragraphs separated by blank lines, in the same order.
 
 Glossary requirements:
 - Include every word that might genuinely challenge a learner at level ${level}.

@@ -1069,6 +1069,147 @@ footer.site {
 
 .hidden { display: none !important; }
 
+/* ---------- TRANSLATION ---------- */
+.trans-p {
+  display: none;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 0.96rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin: -0.4em 0 1.2em;
+  padding: 0.5em 0 0.5em 1rem;
+  border-left: 2px solid var(--accent);
+  font-style: italic;
+  max-width: 64ch;
+  letter-spacing: 0;
+}
+
+.story-body.show-translation .trans-p { display: block; }
+.story-body.show-translation p:not(.trans-p) { margin-bottom: 0.5em; }
+
+.ctrl-btn[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* ---------- STORY CARDS ---------- */
+.story-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.95rem 0;
+  border-bottom: 1px dashed var(--rule);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.12s ease;
+}
+
+.story-card:hover { background: var(--paper-deep); }
+
+.story-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.story-card-title {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 500, 'SOFT' 30;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  flex: 1;
+  min-width: 0;
+}
+
+.story-card-date {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+.story-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--ink-faint);
+}
+
+.story-card-meta .meta-tag {
+  padding: 0.18rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--tag-bg);
+}
+
+.story-card-meta .meta-tag.accent {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.story-card-preview {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 14, 'wght' 400;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  font-style: italic;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.story-card-delete {
+  position: absolute;
+  top: 0.7rem;
+  right: 0;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ink-faint);
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.story-card:hover .story-card-delete { opacity: 1; }
+.story-card-delete:hover { color: var(--accent); border-color: var(--accent); }
+.story-card-delete svg { width: 11px; height: 11px; }
+
+/* ---------- AUDIO LOADING ---------- */
+.ctrl-btn.is-loading {
+  opacity: 0.7;
+  pointer-events: none;
+  position: relative;
+}
+.ctrl-btn.is-loading::after {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  margin-left: 0.4rem;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* ---------- ANIMATIONS ---------- */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -1128,6 +1269,15 @@ footer.site {
     </div>
     <div class="header-right">
       <div class="header-tools">
+        <button class="tool-btn has-zero" id="stories-btn" title="Browse your saved stories">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 2.5h7.5L13 5v8.5H3z"/>
+            <path d="M10 2.5V5h3"/>
+            <path d="M5.5 8h5M5.5 10.5h5"/>
+          </svg>
+          <span>Stories</span>
+          <span class="badge" id="stories-count">0</span>
+        </button>
         <button class="tool-btn has-zero" id="library-btn" title="View words you've marked as known">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
             <path d="M2 3h4.5a1.5 1.5 0 0 1 1.5 1.5V13a1.5 1.5 0 0 0-1.5-1.5H2zM14 3H9.5A1.5 1.5 0 0 0 8 4.5V13a1.5 1.5 0 0 1 1.5-1.5H14z"/>
@@ -1259,10 +1409,24 @@ footer.site {
           <svg viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="2" width="8" height="8"/></svg>
           <span>Stop</span>
         </button>
+        <button class="ctrl-btn" id="translate-btn" type="button" aria-pressed="false" title="Show English translation alongside each paragraph">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 2h5M3.5 2v7M2 5h3M7 11l2.5-6 2.5 6M7.7 9.2h3.6"/></svg>
+          <span>Translate</span>
+        </button>
         <button class="ctrl-btn" id="regenerate-btn" type="button">↻ Regenerate</button>
         <button class="ctrl-btn" id="new-story-btn" type="button">＋ New story</button>
 
         <span class="ctrl-spacer"></span>
+
+        <select class="def-mode-select" id="tts-engine" title="Voice engine for the read-aloud button">
+          <option value="browser" selected>Voice · browser</option>
+          <option value="openai-alloy">Voice · OpenAI alloy</option>
+          <option value="openai-nova">Voice · OpenAI nova</option>
+          <option value="openai-shimmer">Voice · OpenAI shimmer</option>
+          <option value="openai-echo">Voice · OpenAI echo</option>
+          <option value="openai-fable">Voice · OpenAI fable</option>
+          <option value="openai-onyx">Voice · OpenAI onyx</option>
+        </select>
 
         <select class="def-mode-select" id="def-mode" title="How definitions are fetched when you click a word">
           <option value="glossary" selected>Definitions · pre-generated</option>
@@ -1270,6 +1434,8 @@ footer.site {
           <option value="dict">Definitions · dictionary API</option>
         </select>
       </div>
+
+      <audio id="audio-player" preload="none"></audio>
 
       <div id="reader-error"></div>
 
@@ -1282,6 +1448,24 @@ footer.site {
     <span id="voice-status">checking German voices…</span>
   </footer>
 
+</div>
+
+<!-- ============== STORIES OVERLAY ============== -->
+<div class="library-overlay" id="stories-overlay" aria-hidden="true">
+  <div class="library-panel" role="dialog" aria-label="Saved stories">
+    <header class="library-header">
+      <h2>Stories <span class="count" id="stories-count-label">0 stories</span></h2>
+      <button class="lib-close" id="stories-close" title="Close">×</button>
+    </header>
+    <div class="library-search">
+      <input type="text" id="stories-search" placeholder="Search saved stories…" />
+    </div>
+    <div class="library-body" id="stories-body"></div>
+    <footer class="library-footer">
+      <button class="ctrl-btn" id="stories-export" type="button">Export JSON</button>
+      <button class="ctrl-btn" id="stories-clear" type="button">Clear all</button>
+    </footer>
+  </div>
 </div>
 
 <!-- ============== LIBRARY OVERLAY ============== -->
@@ -1339,12 +1523,20 @@ footer.site {
     cache: new Map(),   // Cache for AI / dict lookups
     theme: 'light',
     known: new Map(),   // Map<key, {word, lemma, pos, translation, addedAt}>
+    stories: [],        // Array<{id, title, story, translation, glossary, level, vocab, length, topic, createdAt}>
+    currentStoryId: null,
+    ttsEngine: 'browser', // 'browser' | 'openai-<voice>'
+    audioEl: null,
+    showTranslation: false,
   };
 
   const STORAGE_KEYS = {
     theme: 'lesehaus.theme',
     known: 'lesehaus.known.v1',
+    stories: 'lesehaus.stories.v1',
   };
+
+  const MAX_SAVED_STORIES = 50;
 
   // ============== UTILITIES ==============
   const $ = (sel) => document.querySelector(sel);
@@ -1574,6 +1766,173 @@ footer.site {
     body.innerHTML = html.join('');
   }
 
+  // ============== SAVED STORIES (PERSISTED) ==============
+  function loadStories() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.stories);
+      if (!raw) return;
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        state.stories = arr.filter(s => s && s.id && s.story);
+      }
+    } catch (e) { console.warn('Could not load stories:', e); }
+    updateStoriesCount();
+  }
+
+  function persistStories() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.stories, JSON.stringify(state.stories));
+    } catch (e) {
+      console.warn('Could not save stories:', e);
+      // If quota exceeded, drop the oldest until it fits
+      while (state.stories.length > 1) {
+        state.stories.pop();
+        try {
+          localStorage.setItem(STORAGE_KEYS.stories, JSON.stringify(state.stories));
+          break;
+        } catch {}
+      }
+    }
+  }
+
+  function saveStory(data) {
+    const id = 'st_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+    const entry = {
+      id,
+      title: data.title || '(Untitled)',
+      story: data.story || '',
+      translation: data.translation || '',
+      glossary: data.glossary || [],
+      level: state.level,
+      vocab: state.vocab,
+      length: state.length,
+      topic: state.topic || '',
+      createdAt: Date.now(),
+    };
+    state.stories.unshift(entry);
+    if (state.stories.length > MAX_SAVED_STORIES) {
+      state.stories.length = MAX_SAVED_STORIES;
+    }
+    state.currentStoryId = id;
+    persistStories();
+    updateStoriesCount();
+    return id;
+  }
+
+  function deleteStory(id) {
+    state.stories = state.stories.filter(s => s.id !== id);
+    if (state.currentStoryId === id) state.currentStoryId = null;
+    persistStories();
+    updateStoriesCount();
+  }
+
+  function openStoryById(id) {
+    const s = state.stories.find(x => x.id === id);
+    if (!s) return;
+    state.currentStoryId = id;
+    state.level = s.level || state.level;
+    state.vocab = (typeof s.vocab === 'number') ? s.vocab : state.vocab;
+    state.length = s.length || state.length;
+    state.topic = s.topic || '';
+    state.story = { title: s.title, story: s.story, translation: s.translation || '', glossary: s.glossary || [] };
+    state.showTranslation = false;
+    stopAnyAudio();
+    buildGlossaryMap(s.glossary || []);
+    renderStory(state.story);
+    syncTranslateButton();
+    showView('reader');
+  }
+
+  function updateStoriesCount() {
+    const n = state.stories.length;
+    const btn = document.getElementById('stories-btn');
+    const badge = document.getElementById('stories-count');
+    if (badge) badge.textContent = String(n);
+    if (btn) btn.classList.toggle('has-zero', n === 0);
+    const label = document.getElementById('stories-count-label');
+    if (label) label.textContent = n === 1 ? '1 story' : `${n} stories`;
+  }
+
+  // ============== STORIES MODAL ==============
+  function openStories() {
+    closePopover();
+    renderStoriesList();
+    const ov = document.getElementById('stories-overlay');
+    ov.classList.add('is-visible');
+    ov.setAttribute('aria-hidden', 'false');
+    setTimeout(() => document.getElementById('stories-search')?.focus(), 50);
+  }
+
+  function closeStories() {
+    const ov = document.getElementById('stories-overlay');
+    ov.classList.remove('is-visible');
+    ov.setAttribute('aria-hidden', 'true');
+  }
+
+  function formatStoryDate(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    const today = new Date();
+    const sameDay = d.toDateString() === today.toDateString();
+    if (sameDay) {
+      return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    }
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: d.getFullYear() === today.getFullYear() ? undefined : 'numeric' });
+  }
+
+  function renderStoriesList(filter = '') {
+    const body = document.getElementById('stories-body');
+    if (!body) return;
+
+    if (state.stories.length === 0) {
+      body.innerHTML = `<div class="lib-empty">No saved stories yet.<span class="hint">stories are saved automatically when you generate one</span></div>`;
+      return;
+    }
+
+    const q = filter.trim().toLowerCase();
+    const filtered = q
+      ? state.stories.filter(s =>
+          (s.title || '').toLowerCase().includes(q) ||
+          (s.story || '').toLowerCase().includes(q) ||
+          (s.topic || '').toLowerCase().includes(q)
+        )
+      : state.stories;
+
+    if (filtered.length === 0) {
+      body.innerHTML = `<div class="lib-empty">No stories match "${escapeHtml(filter)}".</div>`;
+      return;
+    }
+
+    const html = filtered.map(s => {
+      const preview = (s.story || '').slice(0, 180).replace(/\s+/g, ' ');
+      const vocabTag = s.vocab === 0
+        ? 'no cap'
+        : `top ${(s.vocab/1000).toString().replace(/\.0$/, '')}k`;
+      return `
+        <div class="story-card" data-id="${escapeHtml(s.id)}">
+          <button class="story-card-delete" data-action="delete" title="Delete this story">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+          </button>
+          <div class="story-card-header">
+            <span class="story-card-title">${escapeHtml(s.title || '(Untitled)')}</span>
+            <span class="story-card-date">${escapeHtml(formatStoryDate(s.createdAt))}</span>
+          </div>
+          <div class="story-card-meta">
+            <span class="meta-tag accent">${escapeHtml(s.level || '')}</span>
+            <span class="meta-tag">${escapeHtml(vocabTag)} vocab</span>
+            <span class="meta-tag">${escapeHtml(s.length || '')}</span>
+            ${s.topic ? `<span class="meta-tag">${escapeHtml(s.topic.slice(0, 40))}${s.topic.length > 40 ? '…' : ''}</span>` : ''}
+          </div>
+          <p class="story-card-preview">${escapeHtml(preview)}${(s.story || '').length > 180 ? '…' : ''}</p>
+        </div>
+      `;
+    }).join('');
+    body.innerHTML = html;
+  }
+
   // ============== INIT VOICES ==============
   function pickGermanVoice() {
     const voices = speechSynthesis.getVoices();
@@ -1600,9 +1959,13 @@ footer.site {
     speechSynthesis.onvoiceschanged = initVoices;
   }
 
-  // ============== STARTUP: THEME + KNOWN ==============
+  // ============== STARTUP: THEME + KNOWN + STORIES ==============
   initTheme();
   loadKnown();
+  loadStories();
+
+  // Audio element handle
+  state.audioEl = document.getElementById('audio-player');
 
   // Theme button
   document.getElementById('theme-btn').addEventListener('click', toggleTheme);
@@ -1611,16 +1974,74 @@ footer.site {
   document.getElementById('library-btn').addEventListener('click', openLibrary);
   document.getElementById('lib-close').addEventListener('click', closeLibrary);
 
+  // Stories button
+  document.getElementById('stories-btn').addEventListener('click', openStories);
+  document.getElementById('stories-close').addEventListener('click', closeStories);
+
   // Close library on overlay click (but not panel click)
   document.getElementById('library-overlay').addEventListener('click', (e) => {
     if (e.target.id === 'library-overlay') closeLibrary();
   });
 
-  // Esc closes library too
+  // Close stories on overlay click
+  document.getElementById('stories-overlay').addEventListener('click', (e) => {
+    if (e.target.id === 'stories-overlay') closeStories();
+  });
+
+  // Stories search
+  document.getElementById('stories-search').addEventListener('input', (e) => {
+    renderStoriesList(e.target.value);
+  });
+
+  // Stories card actions
+  document.getElementById('stories-body').addEventListener('click', (e) => {
+    const card = e.target.closest('.story-card');
+    if (!card) return;
+    const id = card.dataset.id;
+    const deleteBtn = e.target.closest('[data-action="delete"]');
+    if (deleteBtn) {
+      e.stopPropagation();
+      deleteStory(id);
+      renderStoriesList(document.getElementById('stories-search').value);
+      return;
+    }
+    closeStories();
+    openStoryById(id);
+  });
+
+  // Stories clear all
+  document.getElementById('stories-clear').addEventListener('click', () => {
+    if (state.stories.length === 0) return;
+    const ok = confirm(`Delete all ${state.stories.length} saved stories? This cannot be undone.`);
+    if (!ok) return;
+    state.stories = [];
+    state.currentStoryId = null;
+    persistStories();
+    updateStoriesCount();
+    renderStoriesList(document.getElementById('stories-search').value);
+  });
+
+  // Stories export
+  document.getElementById('stories-export').addEventListener('click', () => {
+    if (state.stories.length === 0) return;
+    const blob = new Blob([JSON.stringify(state.stories, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lesehaus-stories-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+
+  // Esc closes any open overlay
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      const ov = document.getElementById('library-overlay');
-      if (ov.classList.contains('is-visible')) closeLibrary();
+      const lib = document.getElementById('library-overlay');
+      if (lib.classList.contains('is-visible')) closeLibrary();
+      const st = document.getElementById('stories-overlay');
+      if (st.classList.contains('is-visible')) closeStories();
     }
   });
 
@@ -1726,6 +2147,26 @@ footer.site {
     state.defMode = e.target.value;
   });
 
+  // TTS engine
+  $('#tts-engine').addEventListener('change', (e) => {
+    state.ttsEngine = e.target.value;
+  });
+
+  // Translate toggle
+  $('#translate-btn').addEventListener('click', () => {
+    state.showTranslation = !state.showTranslation;
+    syncTranslateButton();
+  });
+
+  function syncTranslateButton() {
+    const btn = $('#translate-btn');
+    const body = $('#story-body');
+    const hasTranslation = !!(state.story && state.story.translation);
+    btn.setAttribute('aria-pressed', state.showTranslation ? 'true' : 'false');
+    btn.style.display = hasTranslation ? '' : 'none';
+    if (body) body.classList.toggle('show-translation', !!state.showTranslation && hasTranslation);
+  }
+
   // ============== GENERATE STORY ==============
   const LOADING_MSGS = [
     'sharpening pencils',
@@ -1739,16 +2180,14 @@ footer.site {
   $('#generate-btn').addEventListener('click', () => generateStory());
   $('#regenerate-btn').addEventListener('click', () => generateStory());
   $('#new-story-btn').addEventListener('click', () => {
+    stopAnyAudio();
     showView('setup');
     closePopover();
   });
 
   async function generateStory() {
     closePopover();
-    if (state.speaking) {
-      speechSynthesis.cancel();
-      state.speaking = false;
-    }
+    stopAnyAudio();
 
     showView('loading');
     const loadingMsg = $('#loading-msg');
@@ -1784,8 +2223,11 @@ footer.site {
       }
 
       state.story = data;
+      state.showTranslation = false;
+      saveStory(data);
       buildGlossaryMap(data.glossary || []);
       renderStory(data);
+      syncTranslateButton();
       showView('reader');
     } catch (err) {
       clearInterval(msgInterval);
@@ -1832,12 +2274,14 @@ footer.site {
 
     const body = $('#story-body');
     body.innerHTML = '';
+    body.classList.toggle('show-translation', !!state.showTranslation);
 
     // Split into paragraphs (preserve user-supplied newlines)
     const paragraphs = data.story.split(/\n\s*\n+/).map(p => p.trim()).filter(Boolean);
+    const transParas = (data.translation || '').split(/\n\s*\n+/).map(p => p.trim()).filter(Boolean);
 
     let globalWordIdx = 0;
-    paragraphs.forEach(paraText => {
+    paragraphs.forEach((paraText, i) => {
       const p = document.createElement('p');
       // Walk through tokens
       let lastIdx = 0;
@@ -1862,7 +2306,25 @@ footer.site {
         p.appendChild(document.createTextNode(paraText.slice(lastIdx)));
       }
       body.appendChild(p);
+
+      // Matching English paragraph (if any)
+      if (transParas[i]) {
+        const tp = document.createElement('p');
+        tp.className = 'trans-p';
+        tp.textContent = transParas[i];
+        body.appendChild(tp);
+      }
     });
+
+    // If the translation had extra paragraphs (rare mismatch), append them
+    if (transParas.length > paragraphs.length) {
+      for (let i = paragraphs.length; i < transParas.length; i++) {
+        const tp = document.createElement('p');
+        tp.className = 'trans-p';
+        tp.textContent = transParas[i];
+        body.appendChild(tp);
+      }
+    }
 
     // Word count meta
     const wordCount = body.querySelectorAll('.w').length;
@@ -2116,30 +2578,67 @@ footer.site {
   $('#play-btn').addEventListener('click', () => playStory());
   $('#stop-btn').addEventListener('click', () => stopStory());
 
-  function playStory() {
-    if (!state.story) return;
-    closePopover();
+  function getStoryText() {
+    // Use the original German story text, not innerText (which may include translations).
+    return state.story?.story || '';
+  }
 
-    // Build a clean text and a parallel map from char index → word span
-    const spans = Array.from($$('#story-body .w'));
-    const text = $('#story-body').innerText;
-    // Build cumulative char offsets for each word span by walking the body
-    const wordOffsets = computeWordOffsets(text, spans);
-
+  function showPlayingUI() {
     $('#play-btn').style.display = 'none';
     $('#stop-btn').style.display = 'inline-flex';
     state.speaking = true;
+  }
+
+  function showStoppedUI() {
+    $$('.w.is-speaking').forEach(s => s.classList.remove('is-speaking'));
+    $('#play-btn').style.display = 'inline-flex';
+    $('#stop-btn').style.display = 'none';
+    $('#play-btn').classList.remove('is-loading');
+    state.speaking = false;
+  }
+
+  function stopAnyAudio() {
+    if (typeof speechSynthesis !== 'undefined') {
+      try { speechSynthesis.cancel(); } catch {}
+    }
+    if (state.audioEl) {
+      try {
+        state.audioEl.pause();
+        state.audioEl.removeAttribute('src');
+        state.audioEl.load();
+      } catch {}
+    }
+    showStoppedUI();
+  }
+
+  function playStory() {
+    if (!state.story) return;
+    closePopover();
+    stopAnyAudio();
+
+    if (state.ttsEngine && state.ttsEngine.startsWith('openai-')) {
+      const voice = state.ttsEngine.slice('openai-'.length);
+      playStoryOpenAI(voice);
+    } else {
+      playStoryBrowser();
+    }
+  }
+
+  function playStoryBrowser() {
+    const spans = Array.from($$('#story-body .w'));
+    const text = getStoryText();
+    const wordOffsets = computeWordOffsetsFromText(text, spans);
+
+    showPlayingUI();
 
     speak(text, {
       onboundary: (e) => {
         if (e.name !== 'word') return;
         const charIdx = e.charIndex;
-        // Find which span this char belongs to
         const span = findSpanForOffset(charIdx, wordOffsets);
         spans.forEach(s => s.classList.remove('is-speaking'));
         if (span) {
           span.classList.add('is-speaking');
-          // Scroll into view smoothly if needed
           const r = span.getBoundingClientRect();
           if (r.top < 80 || r.bottom > window.innerHeight - 80) {
             span.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2147,24 +2646,61 @@ footer.site {
         }
       },
       onend: () => {
-        spans.forEach(s => s.classList.remove('is-speaking'));
-        $('#play-btn').style.display = 'inline-flex';
-        $('#stop-btn').style.display = 'none';
-        state.speaking = false;
+        showStoppedUI();
       },
     });
   }
 
-  function stopStory() {
-    speechSynthesis.cancel();
-    $$('.w.is-speaking').forEach(s => s.classList.remove('is-speaking'));
-    $('#play-btn').style.display = 'inline-flex';
-    $('#stop-btn').style.display = 'none';
-    state.speaking = false;
+  async function playStoryOpenAI(voice) {
+    const text = getStoryText();
+    if (!text) return;
+
+    const playBtn = $('#play-btn');
+    playBtn.classList.add('is-loading');
+    playBtn.style.display = 'inline-flex';
+    state.speaking = true;
+
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice, speed: 0.95 }),
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`TTS failed (${res.status}): ${errText.slice(0, 200)}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = state.audioEl;
+      audio.src = url;
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        showStoppedUI();
+      };
+      audio.onerror = () => {
+        URL.revokeObjectURL(url);
+        showStoppedUI();
+      };
+      playBtn.classList.remove('is-loading');
+      showPlayingUI();
+      await audio.play();
+    } catch (err) {
+      console.error('OpenAI TTS error:', err);
+      playBtn.classList.remove('is-loading');
+      showStoppedUI();
+      const target = $('#reader-error');
+      target.innerHTML = `<div class="error"><strong>Could not play OpenAI voice.</strong><br/>${escapeHtml(err.message || String(err))}<br/><br/>Falling back to browser voice — try the "Read aloud" button again.</div>`;
+      state.ttsEngine = 'browser';
+      $('#tts-engine').value = 'browser';
+    }
   }
 
-  function computeWordOffsets(text, spans) {
-    // Walk through text, finding each span's word in order
+  function stopStory() {
+    stopAnyAudio();
+  }
+
+  function computeWordOffsetsFromText(text, spans) {
     const offsets = [];
     let cursor = 0;
     spans.forEach(span => {
