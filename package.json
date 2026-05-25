@@ -1,0 +1,10 @@
+{
+  "name": "lesehaus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "German story generator for language learners — vocabulary-calibrated AI stories with TTS and click-for-definitions.",
+  "engines": {
+    "node": ">=18"
+  },
+  "type": "module"
+}

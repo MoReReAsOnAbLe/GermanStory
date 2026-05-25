@@ -1,0 +1,101 @@
+// /api/define.js — Vercel serverless function
+// On-demand definition for a single German word, given optional surrounding context.
+// Uses a smaller/cheaper model — this is called once per word click.
+
+const MODEL = process.env.OPENAI_DEFINE_MODEL || 'gpt-4o-mini';
+
+const DEFINE_SCHEMA = {
+  name: 'german_word_definition',
+  strict: true,
+  schema: {
+    type: 'object',
+    properties: {
+      word: { type: 'string', description: 'The word as given.' },
+      lemma: { type: 'string', description: 'Base/dictionary form. For nouns include article like "der Hund". For verbs the infinitive.' },
+      pos: { type: 'string', description: 'Part of speech: noun, verb, adj, adv, prep, conj, pron, art, num, interj.' },
+      translation: { type: 'string', description: 'Short English translation (1-6 words).' },
+      note: { type: 'string', description: 'Optional grammar tip or context-specific meaning. Empty string if none.' },
+    },
+    required: ['word', 'lemma', 'pos', 'translation', 'note'],
+    additionalProperties: false,
+  },
+};
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    return res.status(500).send('OPENAI_API_KEY is not set in environment variables.');
+  }
+
+  let body = req.body;
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch { body = {}; }
+  }
+  body = body || {};
+
+  const word = typeof body.word === 'string' ? body.word.slice(0, 80).trim() : '';
+  const context = typeof body.context === 'string' ? body.context.slice(0, 1200) : '';
+  if (!word) return res.status(400).json({ error: 'No word provided.' });
+
+  const systemPrompt = `You are a precise German-to-English dictionary. Given a German word (possibly inflected) and the surrounding story context, return a concise, accurate definition.
+
+- "word": the inflected form as given.
+- "lemma": dictionary form. For nouns: include the article (der/die/das) and use the nominative singular. For verbs: the infinitive. For separable verbs: include the separable prefix in the infinitive.
+- "pos": noun, verb, adj, adv, prep, conj, pron, art, num, interj.
+- "translation": 1-6 English words capturing the sense in this context.
+- "note": one short sentence with a grammar tip, separable-verb marker, irregular form, or context-specific nuance — or empty string.
+
+Be specific to the context if provided. Do not invent definitions for nonsense input — if the word is not recognizable German, set translation to "(unknown word)" and note to "Not a recognized German word." Always return valid JSON matching the schema.`;
+
+  const userPrompt = context
+    ? `Word: ${word}\n\nContext (from the surrounding story, for disambiguation):\n${context}`
+    : `Word: ${word}`;
+
+  try {
+    const oaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        temperature: 0.2,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        response_format: {
+          type: 'json_schema',
+          json_schema: DEFINE_SCHEMA,
+        },
+      }),
+    });
+
+    if (!oaiRes.ok) {
+      const errText = await oaiRes.text();
+      console.error('OpenAI error (define):', oaiRes.status, errText);
+      return res.status(502).send(`OpenAI API error: ${errText.slice(0, 400)}`);
+    }
+
+    const data = await oaiRes.json();
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) return res.status(502).send('OpenAI returned empty content.');
+
+    let parsed;
+    try { parsed = JSON.parse(content); }
+    catch { return res.status(502).send('OpenAI returned non-JSON content.'); }
+
+    return res.status(200).json(parsed);
+  } catch (err) {
+    console.error('Define handler error:', err);
+    return res.status(500).send(`Server error: ${err.message || String(err)}`);
+  }
+}

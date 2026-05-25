@@ -1,0 +1,2208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lesehaus — German stories, calibrated to your vocabulary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root, .theme-light {
+  --paper: #f4ecd9;
+  --paper-deep: #ece1c4;
+  --ink: #1c1814;
+  --ink-soft: #4a4338;
+  --ink-faint: #8a7e6a;
+  --rule: #d5c7a3;
+  --accent: #b54a2a;
+  --accent-soft: #e8c4a8;
+  --highlight: #f0d896;
+  --active: #e8b86e;
+  --forest: #2d4a3e;
+  --known-mark: #6a8a72;
+  --input-bg: rgba(255, 255, 255, 0.4);
+  --input-bg-focus: rgba(255, 255, 255, 0.7);
+  --tag-bg: rgba(255, 255, 255, 0.3);
+  --overlay-bg: rgba(28, 24, 20, 0.45);
+  --shadow: 0 1px 0 rgba(28, 24, 20, 0.04), 0 8px 32px -8px rgba(28, 24, 20, 0.16);
+  --grain-opacity: 0.42;
+  --grain-blend: multiply;
+  --vignette: rgba(70, 50, 30, 0.08);
+}
+
+.theme-dark {
+  --paper: #181410;
+  --paper-deep: #221c16;
+  --ink: #ece0c6;
+  --ink-soft: #b8aa90;
+  --ink-faint: #786c58;
+  --rule: #3a322a;
+  --accent: #e88a5e;
+  --accent-soft: #5a3a2e;
+  --highlight: #3a2e1a;
+  --active: #6a4e26;
+  --forest: #8aa898;
+  --known-mark: #8aa898;
+  --input-bg: rgba(255, 255, 255, 0.04);
+  --input-bg-focus: rgba(255, 255, 255, 0.08);
+  --tag-bg: rgba(255, 255, 255, 0.03);
+  --overlay-bg: rgba(0, 0, 0, 0.65);
+  --shadow: 0 1px 0 rgba(0, 0, 0, 0.4), 0 8px 32px -8px rgba(0, 0, 0, 0.7);
+  --grain-opacity: 0.16;
+  --grain-blend: screen;
+  --vignette: rgba(0, 0, 0, 0.5);
+}
+
+html { color-scheme: light dark; }
+html, body { transition: background-color 0.4s ease, color 0.4s ease; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-feature-settings: 'ss01', 'cv11';
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Paper grain overlay */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  z-index: 1;
+  mix-blend-mode: var(--grain-blend);
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/></svg>");
+  transition: opacity 0.4s ease;
+}
+
+/* Vignette */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: radial-gradient(ellipse at center, transparent 50%, var(--vignette) 100%);
+}
+
+.container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  position: relative;
+  z-index: 3;
+}
+
+/* ---------- HEADER ---------- */
+header.site {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 2rem;
+  margin-bottom: 3rem;
+  border-bottom: 1px solid var(--rule);
+  position: relative;
+}
+
+header.site::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 80px;
+  height: 5px;
+  background: var(--ink);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.brand-mark {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 700, 'SOFT' 30;
+  font-size: 2.6rem;
+  line-height: 0.9;
+  color: var(--accent);
+  font-style: italic;
+}
+
+.brand h1 {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 500, 'SOFT' 0;
+  font-size: 2.2rem;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.tagline {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  text-align: right;
+  max-width: 280px;
+  line-height: 1.7;
+  margin-top: 0.4rem;
+}
+
+.tagline em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.7rem;
+}
+
+.header-tools {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  background: var(--tag-bg);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tool-btn:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: var(--paper-deep);
+}
+
+.tool-btn svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.tool-btn .badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--accent);
+  color: var(--paper);
+  border-radius: 10px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.tool-btn.has-zero .badge { display: none; }
+
+/* Theme toggle uses two icons; we swap visibility via the theme class */
+.theme-icon-sun, .theme-icon-moon { display: none; }
+.theme-light .theme-icon-moon { display: inline-block; }
+.theme-dark  .theme-icon-sun  { display: inline-block; }
+
+/* ---------- SETUP VIEW ---------- */
+.setup {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+}
+
+.setup-intro {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 350, 'SOFT' 50;
+  font-size: clamp(1.6rem, 3.4vw, 2.4rem);
+  line-height: 1.2;
+  max-width: 28ch;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.setup-intro em {
+  font-style: italic;
+  font-variation-settings: 'opsz' 144, 'wght' 350, 'SOFT' 100;
+  color: var(--accent);
+}
+
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.75rem 2.5rem;
+  align-items: start;
+}
+
+.field { display: flex; flex-direction: column; gap: 0.6rem; }
+.field.full { grid-column: 1 / -1; }
+
+.field-label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-faint);
+}
+
+.field-label .num {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 9, 'wght' 500;
+  color: var(--accent);
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.field-hint {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  font-style: italic;
+  margin-top: 0.2rem;
+  min-height: 1.1em;
+}
+
+/* Segmented control */
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: transparent;
+  overflow: hidden;
+}
+
+.segmented button {
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0.5rem;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--ink);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  letter-spacing: 0.02em;
+}
+
+.segmented button:last-child { border-right: none; }
+.segmented button:hover { background: rgba(28, 24, 20, 0.05); }
+
+.segmented button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* Text input */
+.text-input {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  background: var(--input-bg);
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 14, 'wght' 400;
+  font-size: 1.05rem;
+  color: var(--ink);
+  outline: none;
+  transition: background 0.15s ease;
+}
+
+.text-input::placeholder {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.text-input:focus {
+  background: var(--input-bg-focus);
+}
+
+.topic-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.topic-chip {
+  padding: 0.32rem 0.7rem;
+  background: transparent;
+  border: 1px dashed var(--ink-faint);
+  border-radius: 100px;
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 14, 'wght' 400;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.topic-chip:hover {
+  background: var(--paper-deep);
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+/* Generate button */
+.generate-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.95rem 1.6rem;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: 2px;
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 14, 'wght' 500;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 0 var(--accent);
+  letter-spacing: 0.01em;
+}
+
+.generate-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 var(--accent);
+}
+
+.generate-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 0 0 var(--accent);
+}
+
+.generate-btn:disabled {
+  background: var(--ink-faint);
+  cursor: wait;
+  box-shadow: none;
+  transform: none;
+}
+
+.generate-btn .arrow {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-variation-settings: 'opsz' 144, 'wght' 300;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+/* ---------- LOADING VIEW ---------- */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 5rem 0;
+  text-align: center;
+}
+
+.loading h2 {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 400, 'SOFT' 100;
+  font-style: italic;
+  font-size: 2rem;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.loading-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--ink-faint);
+}
+
+.loader-line {
+  width: 200px;
+  height: 1px;
+  background: var(--rule);
+  position: relative;
+  overflow: hidden;
+}
+
+.loader-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 50%;
+  height: 100%;
+  background: var(--accent);
+  animation: slide 1.6s ease-in-out infinite;
+}
+
+@keyframes slide {
+  0% { left: -50%; }
+  100% { left: 100%; }
+}
+
+/* ---------- READER VIEW ---------- */
+.reader {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+.reader-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-faint);
+}
+
+.meta-tag {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--tag-bg);
+}
+
+.meta-tag.accent { color: var(--accent); border-color: var(--accent); }
+.meta-divider { color: var(--rule); padding: 0 0.2rem; }
+
+.story-title {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 500, 'SOFT' 30;
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  line-height: 1.05;
+  color: var(--ink);
+  letter-spacing: -0.025em;
+  margin-bottom: 0.4rem;
+}
+
+.story-title::first-letter {
+  font-variation-settings: 'opsz' 144, 'wght' 500, 'SOFT' 100;
+  color: var(--accent);
+}
+
+.story-body {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 14, 'wght' 400, 'SOFT' 0;
+  font-size: clamp(1.1rem, 1.8vw, 1.28rem);
+  line-height: 1.65;
+  color: var(--ink);
+  max-width: 64ch;
+  hyphens: auto;
+  letter-spacing: 0;
+}
+
+.story-body p { margin-bottom: 1.2em; }
+
+.story-body p:first-of-type::first-letter {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 600, 'SOFT' 30;
+  font-size: 3.6em;
+  float: left;
+  line-height: 0.85;
+  margin: 0.05em 0.08em 0 0;
+  color: var(--accent);
+}
+
+/* Clickable words */
+.w {
+  cursor: pointer;
+  border-radius: 2px;
+  padding: 0 0.04em;
+  margin: 0 -0.04em;
+  transition: background 0.12s ease, color 0.18s ease;
+  position: relative;
+}
+
+.w:hover {
+  background: var(--highlight);
+}
+
+.w.is-active {
+  background: var(--active);
+}
+
+.w.is-speaking {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+/* Words marked as known: faded with a dotted underline */
+.w.is-known {
+  color: var(--ink-faint);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--known-mark);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+.w.is-known:hover {
+  color: var(--ink);
+}
+.w.is-known.is-speaking {
+  color: var(--paper);
+}
+
+/* Reader controls bar */
+.reader-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 1.2rem 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  margin-top: 1rem;
+}
+
+.ctrl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  background: transparent;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ctrl-btn:hover { background: var(--ink); color: var(--paper); }
+.ctrl-btn.primary { background: var(--ink); color: var(--paper); }
+.ctrl-btn.primary:hover { background: var(--accent); border-color: var(--accent); }
+
+.ctrl-btn svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.ctrl-spacer { flex: 1; }
+
+.def-mode-select {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 0.4rem 0.6rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+/* ---------- POPOVER ---------- */
+.popover {
+  position: absolute;
+  z-index: 100;
+  max-width: 320px;
+  min-width: 240px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+
+.popover.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.popover-arrow {
+  position: absolute;
+  top: -7px;
+  left: 16px;
+  width: 12px;
+  height: 12px;
+  background: var(--paper);
+  border-left: 1px solid var(--ink);
+  border-top: 1px solid var(--ink);
+  transform: rotate(45deg);
+}
+
+.popover-arrow.below {
+  top: auto;
+  bottom: -7px;
+  border-left: none;
+  border-top: none;
+  border-right: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+
+.popover-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem 0.4rem;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.pop-word {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 500, 'SOFT' 30;
+  font-size: 1.4rem;
+  letter-spacing: -0.01em;
+  flex: 1;
+  word-break: break-word;
+}
+
+.pop-speak {
+  background: transparent;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ink);
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.pop-speak:hover { background: var(--ink); color: var(--paper); }
+.pop-speak svg { width: 12px; height: 12px; }
+
+.pop-close {
+  background: transparent;
+  border: none;
+  width: 22px;
+  height: 22px;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--ink-faint);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.pop-close:hover { color: var(--accent); }
+
+.popover-body {
+  padding: 0.65rem 0.9rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pop-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink-faint);
+}
+
+.pop-meta .lemma {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 14, 'wght' 400, 'SOFT' 80;
+  font-style: italic;
+  font-size: 0.92rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+.pop-translation {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 14, 'wght' 400, 'SOFT' 30;
+  font-size: 1.05rem;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.pop-note {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  line-height: 1.45;
+  padding-top: 0.4rem;
+  border-top: 1px dashed var(--rule);
+  font-style: italic;
+}
+
+.pop-loading {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.pop-actions {
+  display: flex;
+  gap: 0.4rem;
+  padding-top: 0.5rem;
+  margin-top: 0.2rem;
+  border-top: 1px dashed var(--rule);
+}
+
+.pop-action {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.6rem;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pop-action:hover {
+  border-color: var(--known-mark);
+  color: var(--known-mark);
+}
+
+.pop-action.is-known {
+  background: var(--known-mark);
+  border-color: var(--known-mark);
+  color: var(--paper);
+}
+
+.pop-action.is-known:hover {
+  background: transparent;
+  color: var(--known-mark);
+}
+
+.pop-action .check {
+  font-size: 0.85rem;
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* ---------- LIBRARY OVERLAY ---------- */
+.library-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--overlay-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.library-overlay.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.library-panel {
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 640px;
+  max-height: calc(100vh - 4rem);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(12px) scale(0.98);
+  transition: transform 0.25s ease;
+  position: relative;
+}
+
+.library-overlay.is-visible .library-panel {
+  transform: translateY(0) scale(1);
+}
+
+.library-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.3rem 1.5rem 0.9rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.library-header h2 {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 500, 'SOFT' 30;
+  font-size: 1.6rem;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+}
+
+.library-header .count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-faint);
+  font-variation-settings: normal;
+  font-style: normal;
+}
+
+.lib-close {
+  background: transparent;
+  border: none;
+  font-size: 1.6rem;
+  color: var(--ink-faint);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0.2rem 0.4rem;
+}
+.lib-close:hover { color: var(--accent); }
+
+.library-search {
+  padding: 0.85rem 1.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.library-search input {
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  background: var(--input-bg);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 14, 'wght' 400;
+  font-size: 0.95rem;
+  color: var(--ink);
+  outline: none;
+}
+.library-search input::placeholder { color: var(--ink-faint); font-style: italic; }
+.library-search input:focus { border-color: var(--ink); background: var(--input-bg-focus); }
+
+.library-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 1.5rem;
+}
+
+.lib-empty {
+  padding: 3rem 1rem;
+  text-align: center;
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 350, 'SOFT' 60;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--ink-faint);
+  line-height: 1.5;
+}
+
+.lib-empty .hint {
+  display: block;
+  margin-top: 0.6rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-style: normal;
+}
+
+.lib-section-header {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  padding: 1rem 0 0.4rem;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 0.2rem;
+}
+
+.lib-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.lib-entry-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.lib-word {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 144, 'wght' 500, 'SOFT' 30;
+  font-size: 1.1rem;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+
+.lib-pos {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--ink-faint);
+  margin-left: 0.5rem;
+}
+
+.lib-translation {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: 'opsz' 14, 'wght' 400, 'SOFT' 30;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.lib-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.lib-icon-btn {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ink-soft);
+  transition: all 0.15s ease;
+}
+.lib-icon-btn:hover { border-color: var(--ink); color: var(--ink); }
+.lib-icon-btn.danger:hover { border-color: var(--accent); color: var(--accent); }
+.lib-icon-btn svg { width: 12px; height: 12px; }
+
+.library-footer {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  padding: 0.9rem 1.5rem;
+  border-top: 1px solid var(--rule);
+}
+
+/* ---------- ERROR STATE ---------- */
+.error {
+  padding: 1.5rem;
+  background: rgba(181, 74, 42, 0.08);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  color: var(--ink);
+  margin-top: 1rem;
+}
+.error strong { color: var(--accent); }
+.error code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85em;
+  background: rgba(0,0,0,0.05);
+  padding: 0.05rem 0.3rem;
+  border-radius: 2px;
+}
+
+/* ---------- FOOTER ---------- */
+footer.site {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-faint);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- ANIMATIONS ---------- */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in { animation: fade-in 0.45s ease both; }
+.fade-in-stagger > * { animation: fade-in 0.5s ease both; }
+.fade-in-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.fade-in-stagger > *:nth-child(2) { animation-delay: 0.15s; }
+.fade-in-stagger > *:nth-child(3) { animation-delay: 0.25s; }
+.fade-in-stagger > *:nth-child(4) { animation-delay: 0.35s; }
+.fade-in-stagger > *:nth-child(5) { animation-delay: 0.45s; }
+
+/* ---------- MOBILE ---------- */
+@media (max-width: 640px) {
+  header.site { flex-direction: column; gap: 0.8rem; align-items: flex-start; }
+  .header-right { align-items: flex-start; width: 100%; }
+  .header-tools { width: 100%; justify-content: space-between; }
+  .tagline { text-align: left; margin-top: 0; }
+  .control-grid { grid-template-columns: 1fr; }
+  .reader-controls { gap: 0.4rem; }
+  .ctrl-btn { font-size: 0.78rem; padding: 0.5rem 0.8rem; }
+  .ctrl-spacer { display: none; }
+  .def-mode-select { width: 100%; margin-top: 0.4rem; }
+  .library-panel { max-height: calc(100vh - 2rem); }
+  .library-header { padding: 1rem 1.1rem 0.7rem; }
+  .library-search, .library-footer { padding-left: 1.1rem; padding-right: 1.1rem; }
+  .library-body { padding: 0.4rem 1.1rem; }
+}
+</style>
+<script>
+  // Prevent flash-of-wrong-theme: apply the saved or preferred theme before paint.
+  (function () {
+    try {
+      var t = localStorage.getItem('lesehaus.theme');
+      if (t !== 'light' && t !== 'dark') {
+        t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      }
+      document.documentElement.classList.add('theme-' + t);
+    } catch (e) {
+      document.documentElement.classList.add('theme-light');
+    }
+  })();
+</script>
+</head>
+<body>
+
+<div class="grain"></div>
+
+<div class="container">
+
+  <header class="site fade-in">
+    <div class="brand">
+      <span class="brand-mark">L</span>
+      <h1>Lesehaus</h1>
+    </div>
+    <div class="header-right">
+      <div class="header-tools">
+        <button class="tool-btn has-zero" id="library-btn" title="View words you've marked as known">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h4.5a1.5 1.5 0 0 1 1.5 1.5V13a1.5 1.5 0 0 0-1.5-1.5H2zM14 3H9.5A1.5 1.5 0 0 0 8 4.5V13a1.5 1.5 0 0 1 1.5-1.5H14z"/>
+          </svg>
+          <span>Library</span>
+          <span class="badge" id="library-count">0</span>
+        </button>
+        <button class="tool-btn" id="theme-btn" title="Toggle light/dark theme" aria-label="Toggle theme">
+          <svg class="theme-icon-moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13.5 9.5a5 5 0 1 1-6-6 4 4 0 0 0 6 6z"/>
+          </svg>
+          <svg class="theme-icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <circle cx="8" cy="8" r="2.5"/>
+            <path d="M8 1.5v1.5M8 13v1.5M1.5 8h1.5M13 8h1.5M3.3 3.3l1.1 1.1M11.6 11.6l1.1 1.1M3.3 12.7l1.1-1.1M11.6 4.4l1.1-1.1"/>
+          </svg>
+        </button>
+      </div>
+      <p class="tagline">German stories<br />tuned to <em>your</em> vocabulary</p>
+    </div>
+  </header>
+
+  <main id="app">
+
+    <!-- ============== SETUP VIEW ============== -->
+    <section id="setup-view" class="setup fade-in-stagger">
+
+      <p class="setup-intro">
+        Generate a short German story <em>calibrated</em> to the words you already know.
+        Click any word for its definition. Tap the speaker to hear it.
+      </p>
+
+      <div class="control-grid">
+
+        <div class="field">
+          <div class="field-label">
+            <span>Vocabulary cap</span>
+          </div>
+          <div class="segmented" data-control="vocab">
+            <button data-value="1000">1k</button>
+            <button data-value="2000">2k</button>
+            <button data-value="3000" aria-pressed="true">3k</button>
+            <button data-value="5000">5k</button>
+            <button data-value="7500">7.5k</button>
+            <button data-value="10000">10k</button>
+            <button data-value="0">all</button>
+          </div>
+          <p class="field-hint" data-hint="vocab">Top 3,000 most common German words</p>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <span>Grammar level</span>
+          </div>
+          <div class="segmented" data-control="level">
+            <button data-value="A1">A1</button>
+            <button data-value="A2" aria-pressed="true">A2</button>
+            <button data-value="B1">B1</button>
+            <button data-value="B2">B2</button>
+            <button data-value="C1">C1</button>
+          </div>
+          <p class="field-hint" data-hint="level">Simple past, basic connectors, present perfect</p>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <span>Length</span>
+          </div>
+          <div class="segmented" data-control="length">
+            <button data-value="short">short</button>
+            <button data-value="medium" aria-pressed="true">medium</button>
+            <button data-value="long">long</button>
+          </div>
+          <p class="field-hint" data-hint="length">~250 words, 3 minutes of reading</p>
+        </div>
+
+        <div class="field full">
+          <div class="field-label">
+            <span>Topic <span class="num">(optional)</span></span>
+          </div>
+          <input type="text" class="text-input" id="topic-input" placeholder="A detective searches for a missing cat in Berlin..." maxlength="200" />
+          <div class="topic-chips">
+            <button class="topic-chip" data-topic="Two friends meeting at a café in Vienna">two friends, a café in Vienna</button>
+            <button class="topic-chip" data-topic="A child explores their grandmother's attic">a child in grandma's attic</button>
+            <button class="topic-chip" data-topic="A baker discovers something strange in the dough">a baker, something strange</button>
+            <button class="topic-chip" data-topic="A first day at a new job">first day at a new job</button>
+            <button class="topic-chip" data-topic="A walk through the Black Forest at dawn">walk through the Black Forest</button>
+            <button class="topic-chip" data-topic="An astronaut writes a letter home">astronaut writes home</button>
+          </div>
+        </div>
+
+      </div>
+
+      <button class="generate-btn" id="generate-btn">
+        Compose story <span class="arrow">→</span>
+      </button>
+
+      <div id="setup-error"></div>
+
+    </section>
+
+    <!-- ============== LOADING VIEW ============== -->
+    <section id="loading-view" class="loading hidden">
+      <p class="loading-meta">composing</p>
+      <h2 id="loading-msg">your story is being written</h2>
+      <div class="loader-line"></div>
+    </section>
+
+    <!-- ============== READER VIEW ============== -->
+    <section id="reader-view" class="reader hidden">
+
+      <div class="reader-meta">
+        <span class="meta-tag accent" id="meta-level">A2</span>
+        <span class="meta-divider">·</span>
+        <span class="meta-tag" id="meta-vocab">top 3k vocab</span>
+        <span class="meta-divider">·</span>
+        <span class="meta-tag" id="meta-wordcount">— words</span>
+      </div>
+
+      <h2 class="story-title" id="story-title"></h2>
+
+      <article class="story-body" id="story-body"></article>
+
+      <div class="reader-controls">
+        <button class="ctrl-btn primary" id="play-btn" type="button">
+          <svg viewBox="0 0 12 12" fill="currentColor"><path d="M2 1.5 10 6 2 10.5z"/></svg>
+          <span>Read aloud</span>
+        </button>
+        <button class="ctrl-btn" id="stop-btn" type="button" style="display:none">
+          <svg viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="2" width="8" height="8"/></svg>
+          <span>Stop</span>
+        </button>
+        <button class="ctrl-btn" id="regenerate-btn" type="button">↻ Regenerate</button>
+        <button class="ctrl-btn" id="new-story-btn" type="button">＋ New story</button>
+
+        <span class="ctrl-spacer"></span>
+
+        <select class="def-mode-select" id="def-mode" title="How definitions are fetched when you click a word">
+          <option value="glossary" selected>Definitions · pre-generated</option>
+          <option value="ai">Definitions · AI on click</option>
+          <option value="dict">Definitions · dictionary API</option>
+        </select>
+      </div>
+
+      <div id="reader-error"></div>
+
+    </section>
+
+  </main>
+
+  <footer class="site">
+    <span>Lesehaus · ein Leseprojekt</span>
+    <span id="voice-status">checking German voices…</span>
+  </footer>
+
+</div>
+
+<!-- ============== LIBRARY OVERLAY ============== -->
+<div class="library-overlay" id="library-overlay" aria-hidden="true">
+  <div class="library-panel" role="dialog" aria-label="Library of known words">
+    <header class="library-header">
+      <h2>Library <span class="count" id="lib-count-label">0 words</span></h2>
+      <button class="lib-close" id="lib-close" title="Close">×</button>
+    </header>
+    <div class="library-search">
+      <input type="text" id="lib-search" placeholder="Search your known words…" />
+    </div>
+    <div class="library-body" id="library-body"></div>
+    <footer class="library-footer">
+      <button class="ctrl-btn" id="lib-export" type="button">Export JSON</button>
+      <button class="ctrl-btn" id="lib-clear" type="button">Clear all</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ============== POPOVER ============== -->
+<div class="popover" id="popover" role="dialog" aria-label="Word definition">
+  <div class="popover-arrow" id="popover-arrow"></div>
+  <div class="popover-header">
+    <span class="pop-word" id="pop-word"></span>
+    <button class="pop-speak" id="pop-speak" title="Speak word">
+      <svg viewBox="0 0 16 16">
+        <path d="M8 1.5 4 5H1.5v6H4l4 3.5z" fill="currentColor"/>
+        <path d="M10.5 4.5a4 4 0 0 1 0 7M12.7 2.3a7 7 0 0 1 0 11.4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="pop-close" id="pop-close" title="Close">×</button>
+  </div>
+  <div class="popover-body" id="popover-body">
+    <!-- filled dynamically -->
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ============== STATE ==============
+  const state = {
+    vocab: 3000,
+    level: 'A2',
+    length: 'medium',
+    topic: '',
+    defMode: 'glossary',
+    story: null,        // { title, story, glossary: [{word, lemma, pos, translation, note}] }
+    glossaryMap: null,  // Map<string, glossaryEntry> keyed by lowercase word AND lemma
+    activeWord: null,
+    germanVoice: null,
+    speaking: false,
+    cache: new Map(),   // Cache for AI / dict lookups
+    theme: 'light',
+    known: new Map(),   // Map<key, {word, lemma, pos, translation, addedAt}>
+  };
+
+  const STORAGE_KEYS = {
+    theme: 'lesehaus.theme',
+    known: 'lesehaus.known.v1',
+  };
+
+  // ============== UTILITIES ==============
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => document.querySelectorAll(sel);
+
+  const HINTS = {
+    vocab: {
+      1000: 'Top 1,000 — beginner core vocabulary',
+      2000: 'Top 2,000 — early conversational range',
+      3000: 'Top 3,000 most common German words',
+      5000: 'Top 5,000 — comfortable reading range',
+      7500: 'Top 7,500 — broad everyday vocabulary',
+      10000: 'Top 10,000 — advanced reader range',
+      0: 'No cap — any German word',
+    },
+    level: {
+      A1: 'Present tense, simple sentences, basic vocabulary',
+      A2: 'Simple past, basic connectors, present perfect',
+      B1: 'Subordinate clauses, modal verbs, opinions',
+      B2: 'Subjunctive, passive voice, complex argument',
+      C1: 'Idiomatic, nuanced, literary register',
+    },
+    length: {
+      short: '~120 words, 1 minute of reading',
+      medium: '~250 words, 3 minutes of reading',
+      long: '~450 words, 5–6 minutes of reading',
+    },
+  };
+
+  const LENGTH_WORDS = { short: 120, medium: 250, long: 450 };
+
+  // ============== THEME ==============
+  function initTheme() {
+    // The early head script already set theme-light or theme-dark on <html>.
+    // Sync state with that, so toggleTheme flips correctly.
+    let theme = 'light';
+    if (document.documentElement.classList.contains('theme-dark')) theme = 'dark';
+    else if (document.documentElement.classList.contains('theme-light')) theme = 'light';
+    applyTheme(theme);
+  }
+
+  function applyTheme(theme) {
+    state.theme = theme;
+    document.documentElement.classList.remove('theme-light', 'theme-dark');
+    document.documentElement.classList.add('theme-' + theme);
+    try { localStorage.setItem(STORAGE_KEYS.theme, theme); } catch {}
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+  }
+
+  function toggleTheme() {
+    applyTheme(state.theme === 'dark' ? 'light' : 'dark');
+  }
+
+  // ============== KNOWN WORDS (PERSISTED) ==============
+  function knownKeyFromEntry(entry) {
+    const k = (entry?.lemma && entry.lemma.toLowerCase().trim())
+      || (entry?.word && entry.word.toLowerCase().trim())
+      || '';
+    return k;
+  }
+
+  function loadKnown() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.known);
+      if (!raw) return;
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === 'object') {
+        Object.entries(obj).forEach(([k, v]) => state.known.set(k, v));
+      }
+    } catch (e) { console.warn('Could not load known words:', e); }
+    updateLibraryCount();
+  }
+
+  function saveKnown() {
+    try {
+      const obj = {};
+      state.known.forEach((v, k) => { obj[k] = v; });
+      localStorage.setItem(STORAGE_KEYS.known, JSON.stringify(obj));
+    } catch (e) { console.warn('Could not save known words:', e); }
+  }
+
+  function isKnownByEntry(entry) {
+    if (!entry) return false;
+    const k = knownKeyFromEntry(entry);
+    return k && state.known.has(k);
+  }
+
+  function isKnownByWord(word) {
+    // First try direct match against lowercased inflected form
+    const w = (word || '').toLowerCase().trim();
+    if (!w) return false;
+    if (state.known.has(w)) return true;
+    // Try lemma via glossary
+    const g = state.glossaryMap?.get(w);
+    if (g) {
+      const lemmaKey = (g.lemma || '').toLowerCase().trim();
+      if (lemmaKey && state.known.has(lemmaKey)) return true;
+    }
+    return false;
+  }
+
+  function markKnown(entry) {
+    const key = knownKeyFromEntry(entry);
+    if (!key) return;
+    state.known.set(key, {
+      word: entry.word || '',
+      lemma: entry.lemma || '',
+      pos: entry.pos || '',
+      translation: entry.translation || '',
+      addedAt: Date.now(),
+    });
+    saveKnown();
+    updateLibraryCount();
+    refreshKnownInStory();
+  }
+
+  function forgetKnown(key) {
+    state.known.delete(key);
+    saveKnown();
+    updateLibraryCount();
+    refreshKnownInStory();
+  }
+
+  function updateLibraryCount() {
+    const n = state.known.size;
+    const btn = document.getElementById('library-btn');
+    const badge = document.getElementById('library-count');
+    if (badge) badge.textContent = String(n);
+    if (btn) btn.classList.toggle('has-zero', n === 0);
+    const label = document.getElementById('lib-count-label');
+    if (label) label.textContent = n === 1 ? '1 word' : `${n} words`;
+  }
+
+  // After known set changes, walk the rendered story and toggle is-known
+  function refreshKnownInStory() {
+    document.querySelectorAll('#story-body .w').forEach(span => {
+      const isKnown = isKnownByWord(span.dataset.word);
+      span.classList.toggle('is-known', isKnown);
+    });
+  }
+
+  // ============== LIBRARY MODAL ==============
+  function openLibrary() {
+    closePopover();
+    renderLibrary();
+    const ov = document.getElementById('library-overlay');
+    ov.classList.add('is-visible');
+    ov.setAttribute('aria-hidden', 'false');
+    setTimeout(() => document.getElementById('lib-search')?.focus(), 50);
+  }
+
+  function closeLibrary() {
+    const ov = document.getElementById('library-overlay');
+    ov.classList.remove('is-visible');
+    ov.setAttribute('aria-hidden', 'true');
+  }
+
+  function renderLibrary(filter = '') {
+    const body = document.getElementById('library-body');
+    if (!body) return;
+
+    if (state.known.size === 0) {
+      body.innerHTML = `<div class="lib-empty">No known words yet.<span class="hint">click a word → mark as known</span></div>`;
+      return;
+    }
+
+    // Get and sort entries
+    const entries = [];
+    state.known.forEach((v, k) => entries.push({ key: k, ...v }));
+
+    const q = filter.trim().toLowerCase();
+    const filtered = q
+      ? entries.filter(e =>
+          (e.lemma || '').toLowerCase().includes(q) ||
+          (e.word || '').toLowerCase().includes(q) ||
+          (e.translation || '').toLowerCase().includes(q)
+        )
+      : entries;
+
+    if (filtered.length === 0) {
+      body.innerHTML = `<div class="lib-empty">No matches for "${escapeHtml(filter)}".</div>`;
+      return;
+    }
+
+    // Sort alphabetically by displayed name (lemma if present, else word)
+    // Strip article for sorting (der/die/das + space)
+    const sortName = (e) => {
+      const s = (e.lemma || e.word || '').toLowerCase();
+      return s.replace(/^(der|die|das|den|dem|des)\s+/, '');
+    };
+    filtered.sort((a, b) => sortName(a).localeCompare(sortName(b), 'de'));
+
+    // Group by first letter
+    const groups = new Map();
+    filtered.forEach(e => {
+      const letter = sortName(e).charAt(0).toUpperCase() || '·';
+      if (!groups.has(letter)) groups.set(letter, []);
+      groups.get(letter).push(e);
+    });
+
+    const html = [];
+    groups.forEach((items, letter) => {
+      html.push(`<div class="lib-section-header">${escapeHtml(letter)}</div>`);
+      items.forEach(e => {
+        const display = e.lemma || e.word || '(unknown)';
+        const posTag = e.pos ? `<span class="lib-pos">${escapeHtml(e.pos)}</span>` : '';
+        const trans = e.translation ? `<span class="lib-translation">${escapeHtml(e.translation)}</span>` : '';
+        html.push(`
+          <div class="lib-entry" data-key="${escapeHtml(e.key)}">
+            <div class="lib-entry-main">
+              <div><span class="lib-word">${escapeHtml(display)}</span>${posTag}</div>
+              ${trans}
+            </div>
+            <div class="lib-actions">
+              <button class="lib-icon-btn" data-action="speak" title="Speak">
+                <svg viewBox="0 0 16 16"><path d="M8 1.5 4 5H1.5v6H4l4 3.5z" fill="currentColor"/><path d="M10.5 4.5a4 4 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+              </button>
+              <button class="lib-icon-btn danger" data-action="forget" title="Forget">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+              </button>
+            </div>
+          </div>
+        `);
+      });
+    });
+    body.innerHTML = html.join('');
+  }
+
+  // ============== INIT VOICES ==============
+  function pickGermanVoice() {
+    const voices = speechSynthesis.getVoices();
+    if (!voices.length) return null;
+    // Prefer native German voices
+    const preferred = voices.find(v => v.lang === 'de-DE' && v.localService)
+      || voices.find(v => v.lang === 'de-DE')
+      || voices.find(v => v.lang.startsWith('de'));
+    return preferred || null;
+  }
+
+  function initVoices() {
+    state.germanVoice = pickGermanVoice();
+    const status = $('#voice-status');
+    if (state.germanVoice) {
+      status.textContent = `voice · ${state.germanVoice.name}`;
+    } else {
+      status.textContent = 'no German voice found — install one in your OS';
+    }
+  }
+
+  if (typeof speechSynthesis !== 'undefined') {
+    initVoices();
+    speechSynthesis.onvoiceschanged = initVoices;
+  }
+
+  // ============== STARTUP: THEME + KNOWN ==============
+  initTheme();
+  loadKnown();
+
+  // Theme button
+  document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+  // Library button
+  document.getElementById('library-btn').addEventListener('click', openLibrary);
+  document.getElementById('lib-close').addEventListener('click', closeLibrary);
+
+  // Close library on overlay click (but not panel click)
+  document.getElementById('library-overlay').addEventListener('click', (e) => {
+    if (e.target.id === 'library-overlay') closeLibrary();
+  });
+
+  // Esc closes library too
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const ov = document.getElementById('library-overlay');
+      if (ov.classList.contains('is-visible')) closeLibrary();
+    }
+  });
+
+  // Library search
+  document.getElementById('lib-search').addEventListener('input', (e) => {
+    renderLibrary(e.target.value);
+  });
+
+  // Library entry actions (event delegation)
+  document.getElementById('library-body').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const entry = btn.closest('.lib-entry');
+    if (!entry) return;
+    const key = entry.dataset.key;
+    const data = state.known.get(key);
+    if (!data) return;
+    if (btn.dataset.action === 'speak') {
+      speak(data.lemma || data.word);
+    } else if (btn.dataset.action === 'forget') {
+      forgetKnown(key);
+      renderLibrary(document.getElementById('lib-search').value);
+    }
+  });
+
+  // Clear all
+  document.getElementById('lib-clear').addEventListener('click', () => {
+    if (state.known.size === 0) return;
+    const ok = confirm(`Forget all ${state.known.size} known words? This cannot be undone.`);
+    if (!ok) return;
+    state.known.clear();
+    saveKnown();
+    updateLibraryCount();
+    refreshKnownInStory();
+    renderLibrary(document.getElementById('lib-search').value);
+  });
+
+  // Export JSON
+  document.getElementById('lib-export').addEventListener('click', () => {
+    const obj = {};
+    state.known.forEach((v, k) => { obj[k] = v; });
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lesehaus-known-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+
+  function speak(text, opts = {}) {
+    if (typeof speechSynthesis === 'undefined') return;
+    speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'de-DE';
+    if (state.germanVoice) utter.voice = state.germanVoice;
+    utter.rate = opts.rate ?? 0.95;
+    utter.pitch = opts.pitch ?? 1;
+    if (opts.onboundary) utter.onboundary = opts.onboundary;
+    if (opts.onend) utter.onend = opts.onend;
+    if (opts.onstart) utter.onstart = opts.onstart;
+    speechSynthesis.speak(utter);
+    return utter;
+  }
+
+  // ============== SEGMENTED CONTROLS ==============
+  function setupSegmented(name) {
+    const group = document.querySelector(`[data-control="${name}"]`);
+    if (!group) return;
+    const hint = document.querySelector(`[data-hint="${name}"]`);
+    group.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      group.querySelectorAll('button').forEach(b => b.removeAttribute('aria-pressed'));
+      btn.setAttribute('aria-pressed', 'true');
+      const value = btn.dataset.value;
+      // Coerce vocab to number
+      state[name] = (name === 'vocab') ? Number(value) : value;
+      if (hint) hint.textContent = HINTS[name][state[name]] || '';
+    });
+  }
+
+  setupSegmented('vocab');
+  setupSegmented('level');
+  setupSegmented('length');
+
+  // Topic chips
+  $$('.topic-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      $('#topic-input').value = chip.dataset.topic;
+      state.topic = chip.dataset.topic;
+      $('#topic-input').focus();
+    });
+  });
+  $('#topic-input').addEventListener('input', (e) => {
+    state.topic = e.target.value.trim();
+  });
+
+  // Definition mode
+  $('#def-mode').addEventListener('change', (e) => {
+    state.defMode = e.target.value;
+  });
+
+  // ============== GENERATE STORY ==============
+  const LOADING_MSGS = [
+    'sharpening pencils',
+    'consulting the Duden',
+    'translating thoughts into German',
+    'choosing the right verb',
+    'arranging the umlauts',
+    'finding a good opening line',
+  ];
+
+  $('#generate-btn').addEventListener('click', () => generateStory());
+  $('#regenerate-btn').addEventListener('click', () => generateStory());
+  $('#new-story-btn').addEventListener('click', () => {
+    showView('setup');
+    closePopover();
+  });
+
+  async function generateStory() {
+    closePopover();
+    if (state.speaking) {
+      speechSynthesis.cancel();
+      state.speaking = false;
+    }
+
+    showView('loading');
+    const loadingMsg = $('#loading-msg');
+    let msgIdx = 0;
+    loadingMsg.textContent = LOADING_MSGS[0];
+    const msgInterval = setInterval(() => {
+      msgIdx = (msgIdx + 1) % LOADING_MSGS.length;
+      loadingMsg.textContent = LOADING_MSGS[msgIdx];
+    }, 2200);
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vocab: state.vocab,
+          level: state.level,
+          length: state.length,
+          topic: state.topic,
+        }),
+      });
+
+      clearInterval(msgInterval);
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Server error (${res.status}): ${errText.slice(0, 200)}`);
+      }
+
+      const data = await res.json();
+      if (!data.title || !data.story) {
+        throw new Error('Story response was malformed.');
+      }
+
+      state.story = data;
+      buildGlossaryMap(data.glossary || []);
+      renderStory(data);
+      showView('reader');
+    } catch (err) {
+      clearInterval(msgInterval);
+      console.error(err);
+      showView('setup');
+      const target = $('#setup-error');
+      target.innerHTML = `<div class="error"><strong>Could not generate story.</strong><br/>
+        ${escapeHtml(err.message || String(err))}<br/><br/>
+        Check that <code>OPENAI_API_KEY</code> is set in Vercel and the function is deployed.</div>`;
+    }
+  }
+
+  function showView(view) {
+    ['setup', 'loading', 'reader'].forEach(v => {
+      $(`#${v}-view`).classList.toggle('hidden', v !== view);
+    });
+    if (view !== 'setup') $('#setup-error').innerHTML = '';
+    if (view !== 'reader') $('#reader-error').innerHTML = '';
+  }
+
+  // ============== GLOSSARY MAP ==============
+  function buildGlossaryMap(glossary) {
+    const map = new Map();
+    glossary.forEach(entry => {
+      const key1 = (entry.word || '').toLowerCase().trim();
+      const key2 = (entry.lemma || '').toLowerCase().trim();
+      if (key1) map.set(key1, entry);
+      if (key2 && !map.has(key2)) map.set(key2, entry);
+    });
+    state.glossaryMap = map;
+  }
+
+  // ============== STORY RENDER & TOKENIZATION ==============
+  // Match runs of German letters (incl. umlauts/ß) as words.
+  // Keep everything else (spaces, punctuation, newlines) as separators.
+  const WORD_RE = /([a-zA-ZäöüÄÖÜßẞ]+(?:[\u2019'’][a-zA-ZäöüÄÖÜßẞ]+)*)/g;
+
+  function renderStory(data) {
+    $('#story-title').textContent = data.title;
+    $('#meta-level').textContent = state.level;
+    $('#meta-vocab').textContent = state.vocab === 0
+      ? 'no vocab cap'
+      : `top ${(state.vocab/1000).toString().replace(/\.0$/, '')}k vocab`;
+
+    const body = $('#story-body');
+    body.innerHTML = '';
+
+    // Split into paragraphs (preserve user-supplied newlines)
+    const paragraphs = data.story.split(/\n\s*\n+/).map(p => p.trim()).filter(Boolean);
+
+    let globalWordIdx = 0;
+    paragraphs.forEach(paraText => {
+      const p = document.createElement('p');
+      // Walk through tokens
+      let lastIdx = 0;
+      let match;
+      WORD_RE.lastIndex = 0;
+      while ((match = WORD_RE.exec(paraText)) !== null) {
+        // Push the gap before the match
+        if (match.index > lastIdx) {
+          p.appendChild(document.createTextNode(paraText.slice(lastIdx, match.index)));
+        }
+        const word = match[0];
+        const span = document.createElement('span');
+        span.className = 'w';
+        span.textContent = word;
+        span.dataset.word = word;
+        span.dataset.idx = String(globalWordIdx++);
+        span.addEventListener('click', (e) => handleWordClick(e, span));
+        p.appendChild(span);
+        lastIdx = match.index + word.length;
+      }
+      if (lastIdx < paraText.length) {
+        p.appendChild(document.createTextNode(paraText.slice(lastIdx)));
+      }
+      body.appendChild(p);
+    });
+
+    // Word count meta
+    const wordCount = body.querySelectorAll('.w').length;
+    $('#meta-wordcount').textContent = `${wordCount} words`;
+
+    // Mark any words already in the known set
+    refreshKnownInStory();
+
+    body.classList.add('fade-in');
+    setTimeout(() => body.classList.remove('fade-in'), 600);
+  }
+
+  // ============== WORD CLICK → POPOVER ==============
+  async function handleWordClick(e, span) {
+    e.stopPropagation();
+    // Clear previous active
+    $$('.w.is-active').forEach(el => el.classList.remove('is-active'));
+    span.classList.add('is-active');
+    state.activeWord = span;
+
+    openPopover(span);
+    showPopoverLoading();
+
+    const wordRaw = span.dataset.word;
+    const wordKey = wordRaw.toLowerCase();
+    const cacheKey = `${state.defMode}:${wordKey}`;
+
+    // Cache check
+    if (state.cache.has(cacheKey)) {
+      renderPopover(wordRaw, state.cache.get(cacheKey));
+      return;
+    }
+
+    try {
+      let entry = null;
+
+      if (state.defMode === 'glossary') {
+        entry = state.glossaryMap?.get(wordKey) || null;
+        if (!entry) {
+          // Fall back to AI for unknown words in glossary mode
+          entry = await fetchAiDefinition(wordRaw);
+        }
+      } else if (state.defMode === 'ai') {
+        entry = await fetchAiDefinition(wordRaw);
+      } else if (state.defMode === 'dict') {
+        entry = await fetchDictDefinition(wordRaw);
+      }
+
+      if (!entry) {
+        entry = {
+          word: wordRaw,
+          lemma: '',
+          pos: '',
+          translation: '(no definition found)',
+          note: '',
+        };
+      }
+
+      state.cache.set(cacheKey, entry);
+      renderPopover(wordRaw, entry);
+    } catch (err) {
+      console.error(err);
+      renderPopover(wordRaw, {
+        word: wordRaw,
+        translation: '(lookup failed)',
+        note: err.message || String(err),
+      });
+    }
+  }
+
+  async function fetchAiDefinition(word) {
+    const res = await fetch('/api/define', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        word,
+        context: state.story?.story?.slice(0, 800) || '',
+      }),
+    });
+    if (!res.ok) throw new Error('AI lookup failed (' + res.status + ')');
+    return await res.json();
+  }
+
+  async function fetchDictDefinition(word) {
+    // MyMemory free translation API — supports CORS, no key needed
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=de|en`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Dictionary lookup failed');
+    const data = await res.json();
+    const translation = data?.responseData?.translatedText || '(no translation)';
+    // Try to pull the best alternative match
+    const matches = (data?.matches || []).filter(m => m.translation && m.translation.length < 80);
+    const note = matches.length > 1
+      ? 'Alt: ' + matches.slice(1, 3).map(m => m.translation).join(' / ')
+      : '';
+    return {
+      word,
+      lemma: '',
+      pos: '',
+      translation,
+      note,
+    };
+  }
+
+  // ============== POPOVER UI ==============
+  const popoverEl = $('#popover');
+  const popArrow = $('#popover-arrow');
+
+  function openPopover(span) {
+    popoverEl.classList.add('is-visible');
+    positionPopover(span);
+  }
+
+  function positionPopover(span) {
+    const rect = span.getBoundingClientRect();
+    const pRect = popoverEl.getBoundingClientRect();
+
+    const scrollX = window.scrollX || window.pageXOffset;
+    const scrollY = window.scrollY || window.pageYOffset;
+
+    // First, place below the word by default
+    let top = rect.bottom + scrollY + 10;
+    let left = rect.left + scrollX;
+    let arrowBelow = false;
+
+    // If popover would go off the right edge
+    const vw = window.innerWidth;
+    if (left + pRect.width > vw - 16) {
+      left = Math.max(16, vw - pRect.width - 16);
+    }
+
+    // If popover would go off the bottom (and there's room above)
+    const vh = window.innerHeight;
+    const spaceBelow = vh - rect.bottom;
+    if (spaceBelow < pRect.height + 30 && rect.top > pRect.height + 30) {
+      top = rect.top + scrollY - pRect.height - 10;
+      arrowBelow = true;
+    }
+
+    popoverEl.style.top = `${top}px`;
+    popoverEl.style.left = `${left}px`;
+
+    // Position arrow relative to popover, aligned with word
+    const arrowLeft = Math.max(10, Math.min(pRect.width - 22, (rect.left + rect.width / 2) - left - 6));
+    popArrow.style.left = `${arrowLeft}px`;
+    popArrow.classList.toggle('below', arrowBelow);
+  }
+
+  function closePopover() {
+    popoverEl.classList.remove('is-visible');
+    $$('.w.is-active').forEach(el => el.classList.remove('is-active'));
+    state.activeWord = null;
+    state.activeEntry = null;
+  }
+
+  function showPopoverLoading() {
+    const body = $('#popover-body');
+    $('#pop-word').textContent = state.activeWord?.dataset.word || '';
+    body.innerHTML = `<p class="pop-loading">looking up…</p>`;
+  }
+
+  function renderPopover(word, entry) {
+    $('#pop-word').textContent = word;
+    state.activeEntry = entry;
+    const body = $('#popover-body');
+    const parts = [];
+
+    const metaBits = [];
+    if (entry.pos) metaBits.push(escapeHtml(entry.pos));
+    if (entry.lemma && entry.lemma.toLowerCase() !== word.toLowerCase()) {
+      metaBits.push(`<span class="lemma">${escapeHtml(entry.lemma)}</span>`);
+    }
+    if (metaBits.length) {
+      parts.push(`<p class="pop-meta">${metaBits.join(' · ')}</p>`);
+    }
+    parts.push(`<p class="pop-translation">${escapeHtml(entry.translation || '—')}</p>`);
+    if (entry.note) {
+      parts.push(`<p class="pop-note">${escapeHtml(entry.note)}</p>`);
+    }
+
+    // Mark as known / forget button — only if we have something to key it on
+    const canMark = !!knownKeyFromEntry(entry);
+    if (canMark) {
+      const isKnown = isKnownByEntry(entry);
+      const label = isKnown ? 'Known — click to forget' : 'Mark as known';
+      const cls = isKnown ? 'pop-action is-known' : 'pop-action';
+      parts.push(`
+        <div class="pop-actions">
+          <button class="${cls}" id="pop-mark-known" type="button">
+            <span class="check">✓</span><span>${label}</span>
+          </button>
+        </div>
+      `);
+    }
+
+    body.innerHTML = parts.join('');
+
+    // Wire up the mark-known button
+    const markBtn = document.getElementById('pop-mark-known');
+    if (markBtn) {
+      markBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!state.activeEntry) return;
+        if (isKnownByEntry(state.activeEntry)) {
+          forgetKnown(knownKeyFromEntry(state.activeEntry));
+        } else {
+          markKnown(state.activeEntry);
+        }
+        // Re-render popover to flip the button label
+        renderPopover(word, state.activeEntry);
+      });
+    }
+
+    // Re-position after content height changes
+    if (state.activeWord) positionPopover(state.activeWord);
+  }
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!popoverEl.classList.contains('is-visible')) return;
+    if (popoverEl.contains(e.target)) return;
+    if (e.target.classList.contains('w')) return;
+    closePopover();
+  });
+
+  // Close on Esc
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePopover();
+  });
+
+  // Close button
+  $('#pop-close').addEventListener('click', closePopover);
+
+  // Popover speak button
+  $('#pop-speak').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (state.activeWord) speak(state.activeWord.dataset.word);
+  });
+
+  // Reposition on resize/scroll
+  window.addEventListener('resize', () => {
+    if (state.activeWord) positionPopover(state.activeWord);
+  });
+  window.addEventListener('scroll', () => {
+    if (state.activeWord && popoverEl.classList.contains('is-visible')) {
+      positionPopover(state.activeWord);
+    }
+  }, { passive: true });
+
+  // ============== READ-ALOUD WITH HIGHLIGHTING ==============
+  $('#play-btn').addEventListener('click', () => playStory());
+  $('#stop-btn').addEventListener('click', () => stopStory());
+
+  function playStory() {
+    if (!state.story) return;
+    closePopover();
+
+    // Build a clean text and a parallel map from char index → word span
+    const spans = Array.from($$('#story-body .w'));
+    const text = $('#story-body').innerText;
+    // Build cumulative char offsets for each word span by walking the body
+    const wordOffsets = computeWordOffsets(text, spans);
+
+    $('#play-btn').style.display = 'none';
+    $('#stop-btn').style.display = 'inline-flex';
+    state.speaking = true;
+
+    speak(text, {
+      onboundary: (e) => {
+        if (e.name !== 'word') return;
+        const charIdx = e.charIndex;
+        // Find which span this char belongs to
+        const span = findSpanForOffset(charIdx, wordOffsets);
+        spans.forEach(s => s.classList.remove('is-speaking'));
+        if (span) {
+          span.classList.add('is-speaking');
+          // Scroll into view smoothly if needed
+          const r = span.getBoundingClientRect();
+          if (r.top < 80 || r.bottom > window.innerHeight - 80) {
+            span.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      },
+      onend: () => {
+        spans.forEach(s => s.classList.remove('is-speaking'));
+        $('#play-btn').style.display = 'inline-flex';
+        $('#stop-btn').style.display = 'none';
+        state.speaking = false;
+      },
+    });
+  }
+
+  function stopStory() {
+    speechSynthesis.cancel();
+    $$('.w.is-speaking').forEach(s => s.classList.remove('is-speaking'));
+    $('#play-btn').style.display = 'inline-flex';
+    $('#stop-btn').style.display = 'none';
+    state.speaking = false;
+  }
+
+  function computeWordOffsets(text, spans) {
+    // Walk through text, finding each span's word in order
+    const offsets = [];
+    let cursor = 0;
+    spans.forEach(span => {
+      const word = span.textContent;
+      const idx = text.indexOf(word, cursor);
+      if (idx >= 0) {
+        offsets.push({ start: idx, end: idx + word.length, span });
+        cursor = idx + word.length;
+      } else {
+        offsets.push({ start: -1, end: -1, span });
+      }
+    });
+    return offsets;
+  }
+
+  function findSpanForOffset(charIdx, offsets) {
+    // Find first word whose [start, end) contains charIdx, or the next word starting at/after
+    for (let i = 0; i < offsets.length; i++) {
+      const o = offsets[i];
+      if (o.start < 0) continue;
+      if (charIdx >= o.start && charIdx < o.end) return o.span;
+      if (charIdx < o.start) return o.span;
+    }
+    return null;
+  }
+
+  // ============== ESCAPE HELPER ==============
+  function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+})();
+</script>
+</body>
+</html>
