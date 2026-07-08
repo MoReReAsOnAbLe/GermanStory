@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#b54a2a"/>
+  <!-- open book, top-angled view -->
+  <path d="M15.5 8 L5 13 L5 24 L15.5 19 Z" fill="#f4ecd9"/>
+  <path d="M16.5 8 L27 13 L27 24 L16.5 19 Z" fill="#ece1c4"/>
+  <rect x="15" y="8" width="2" height="11" fill="#b54a2a"/>
+</svg>
