@@ -32,6 +32,11 @@ const STORY_SCHEMA = {
         type: 'string',
         description: 'The full German story. Paragraphs separated by blank lines (\\n\\n).',
       },
+      themes: {
+        type: 'array',
+        description: '3 to 5 short English tags (one or two words each) capturing the setting, character type, and dominant mood of this story. Examples: ["garden", "elderly woman", "melancholy"] or ["train station", "businessman", "tense", "urban"]. Be specific — these are used to ensure variety across future stories.',
+        items: { type: 'string' },
+      },
       glossary: {
         type: 'array',
         description: 'Definitions for words in the story that may challenge the learner at this level.',
@@ -64,7 +69,7 @@ const STORY_SCHEMA = {
         },
       },
     },
-    required: ['title', 'story', 'glossary'],
+    required: ['title', 'story', 'themes', 'glossary'],
     additionalProperties: false,
   },
 };
@@ -98,6 +103,9 @@ export default async function handler(req, res) {
   const level = ['A1', 'A2', 'B1', 'B2', 'C1'].includes(body.level) ? body.level : 'A2';
   const length = ['short', 'medium', 'long'].includes(body.length) ? body.length : 'medium';
   const topic = typeof body.topic === 'string' ? body.topic.slice(0, 200).trim() : '';
+  const recentThemes = Array.isArray(body.recentThemes)
+    ? body.recentThemes.filter(t => typeof t === 'string').slice(0, 30)
+    : [];
 
   const wordTarget = LENGTH_WORDS[length];
 
@@ -107,17 +115,22 @@ export default async function handler(req, res) {
 
   const topicLine = topic
     ? `Topic / premise: "${topic}". Honor this premise while still telling a complete short story.`
-    : 'Topic: your choice — pick something specific, charming, and original. Avoid generic clichés.';
+    : 'Topic: your choice — pick something specific, surprising, and original. Avoid generic clichés.';
+
+  const diversityLine = recentThemes.length > 0
+    ? `Setting diversity: Vary your settings and characters widely. The reader has recently seen stories about: ${recentThemes.join(', ')}. Choose a setting, character type, and mood that feel clearly distinct from all of these.`
+    : 'Setting diversity: Vary your settings and characters widely — professional environments, historical periods, urban scenes, journeys, workplaces, interior moments, absurd situations. Do not default to gardens, cats, village markets, cozy kitchens, forest walks, or nostalgic rural life unless the topic directly calls for it.';
 
   const systemPrompt = `You are a thoughtful German language teacher and writer. You compose original short stories tailored to a learner's vocabulary and grammar level.
 
-Your stories should feel like real short fiction: a clear setting, a vivid moment, sensory detail, a small turn or surprise. Avoid moralizing, avoid generic openings ("Es war einmal..."), avoid characters with names like "Anna and Max" unless the topic calls for it. Be specific.
+Your stories should feel like real short fiction: a clear setting, a vivid moment, sensory detail, a small turn or surprise. Avoid moralizing, avoid generic openings ("Es war einmal..."), avoid characters with names like "Anna and Max" unless the topic calls for it. Be specific and unexpected.
 
 Constraints for this request:
 - CEFR level: ${level}. ${LEVEL_GUIDANCE[level]}
 - ${vocabLine}
 - Length target: approximately ${wordTarget} German words (within ±20%).
 - ${topicLine}
+- ${diversityLine}
 
 Glossary requirements:
 - Include every word that might genuinely challenge a learner at level ${level}.

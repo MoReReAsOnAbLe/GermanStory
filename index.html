@@ -1344,7 +1344,37 @@ footer.site {
   const STORAGE_KEYS = {
     theme: 'lesehaus.theme',
     known: 'lesehaus.known.v1',
+    themes: 'lesehaus.themes.v1',
   };
+
+  const THEMES_HISTORY_MAX = 8; // number of past stories to remember
+
+  function loadRecentThemes() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.themes);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return [];
+      // arr is an array of string arrays (one per past story); flatten to a unique list
+      const flat = [...new Set(arr.flat().filter(t => typeof t === 'string'))];
+      return flat;
+    } catch { return []; }
+  }
+
+  function saveRecentThemes(newThemes) {
+    if (!Array.isArray(newThemes) || newThemes.length === 0) return;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.themes);
+      let history = [];
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) history = parsed;
+      }
+      history.push(newThemes.filter(t => typeof t === 'string'));
+      if (history.length > THEMES_HISTORY_MAX) history = history.slice(-THEMES_HISTORY_MAX);
+      localStorage.setItem(STORAGE_KEYS.themes, JSON.stringify(history));
+    } catch (e) { console.warn('Could not save story themes:', e); }
+  }
 
   // ============== UTILITIES ==============
   const $ = (sel) => document.querySelector(sel);
@@ -1768,6 +1798,7 @@ footer.site {
           level: state.level,
           length: state.length,
           topic: state.topic,
+          recentThemes: loadRecentThemes(),
         }),
       });
 
@@ -1784,6 +1815,7 @@ footer.site {
       }
 
       state.story = data;
+      saveRecentThemes(data.themes || []);
       buildGlossaryMap(data.glossary || []);
       renderStory(data);
       showView('reader');
