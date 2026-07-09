@@ -5,6 +5,9 @@
     },
     "api/define.js": {
       "maxDuration": 15
+    },
+    "api/speak.js": {
+      "maxDuration": 30
     }
   }
 }

@@ -1097,6 +1097,7 @@ footer.site {
   .ctrl-btn { font-size: 0.78rem; padding: 0.5rem 0.8rem; }
   .ctrl-spacer { display: none; }
   .def-mode-select { width: 100%; margin-top: 0.4rem; }
+  #voice-select { margin-top: 0; }
   .library-panel { max-height: calc(100vh - 2rem); }
   .library-header { padding: 1rem 1.1rem 0.7rem; }
   .library-search, .library-footer { padding-left: 1.1rem; padding-right: 1.1rem; }
@@ -1267,6 +1268,16 @@ footer.site {
 
         <span class="ctrl-spacer"></span>
 
+        <select class="def-mode-select" id="voice-select" title="Text-to-speech voice">
+          <option value="openai:shimmer" selected>Voice · OpenAI Shimmer</option>
+          <option value="openai:alloy">Voice · OpenAI Alloy</option>
+          <option value="openai:echo">Voice · OpenAI Echo</option>
+          <option value="openai:fable">Voice · OpenAI Fable</option>
+          <option value="openai:nova">Voice · OpenAI Nova</option>
+          <option value="openai:onyx">Voice · OpenAI Onyx</option>
+          <option value="browser">Voice · Browser</option>
+        </select>
+
         <select class="def-mode-select" id="def-mode" title="How definitions are fetched when you click a word">
           <option value="glossary" selected>Definitions · pre-generated</option>
           <option value="ai">Definitions · AI on click</option>
@@ -1339,6 +1350,9 @@ footer.site {
     activeWord: null,
     germanVoice: null,
     speaking: false,
+    voiceMode: 'openai',   // 'openai' | 'browser'
+    openaiVoice: 'shimmer',
+    currentAudio: null,    // HTMLAudioElement when OpenAI TTS is playing
     cache: new Map(),   // Cache for AI / dict lookups
     theme: 'light',
     known: new Map(),   // Map<key, {word, lemma, pos, translation, addedAt}>
@@ -1348,7 +1362,10 @@ footer.site {
     theme: 'lesehaus.theme',
     known: 'lesehaus.known.v1',
     themes: 'lesehaus.themes.v1',
+    voice: 'lesehaus.voice.v1',
   };
+
+  const OPENAI_VOICES = ['alloy', 'echo', 'fable', 'nova', 'onyx', 'shimmer'];
 
   const THEMES_HISTORY_MAX = 8; // number of past stories to remember
 
@@ -1611,21 +1628,27 @@ footer.site {
   function pickGermanVoice() {
     const voices = speechSynthesis.getVoices();
     if (!voices.length) return null;
-    // Prefer native German voices
     const preferred = voices.find(v => v.lang === 'de-DE' && v.localService)
       || voices.find(v => v.lang === 'de-DE')
       || voices.find(v => v.lang.startsWith('de'));
     return preferred || null;
   }
 
+  function updateVoiceStatus() {
+    const status = $('#voice-status');
+    if (!status) return;
+    if (state.voiceMode === 'openai') {
+      status.textContent = `voice · OpenAI ${state.openaiVoice}`;
+    } else {
+      status.textContent = state.germanVoice
+        ? `voice · ${state.germanVoice.name}`
+        : 'no German voice found — install one in your OS';
+    }
+  }
+
   function initVoices() {
     state.germanVoice = pickGermanVoice();
-    const status = $('#voice-status');
-    if (state.germanVoice) {
-      status.textContent = `voice · ${state.germanVoice.name}`;
-    } else {
-      status.textContent = 'no German voice found — install one in your OS';
-    }
+    updateVoiceStatus();
   }
 
   if (typeof speechSynthesis !== 'undefined') {
@@ -1633,9 +1656,36 @@ footer.site {
     speechSynthesis.onvoiceschanged = initVoices;
   }
 
+  // ============== VOICE PREFERENCE ==============
+  function loadVoicePref() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.voice);
+      if (!saved) return;
+      const select = $('#voice-select');
+      if (select && Array.from(select.options).some(o => o.value === saved)) {
+        select.value = saved;
+        applyVoiceSelection(saved, false);
+      }
+    } catch {}
+  }
+
+  function applyVoiceSelection(value, persist = true) {
+    if (value === 'browser') {
+      state.voiceMode = 'browser';
+    } else {
+      state.voiceMode = 'openai';
+      state.openaiVoice = value.replace('openai:', '');
+    }
+    if (persist) {
+      try { localStorage.setItem(STORAGE_KEYS.voice, value); } catch {}
+    }
+    updateVoiceStatus();
+  }
+
   // ============== STARTUP: THEME + KNOWN ==============
   initTheme();
   loadKnown();
+  loadVoicePref();
 
   // Theme button
   document.getElementById('theme-btn').addEventListener('click', toggleTheme);
@@ -1706,7 +1756,37 @@ footer.site {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
 
-  function speak(text, opts = {}) {
+  async function speak(text, opts = {}) {
+    if (state.voiceMode === 'openai') {
+      return speakOpenAI(text);
+    }
+    return speakBrowser(text, opts);
+  }
+
+  async function speakOpenAI(text) {
+    stopAudioOnly();
+    try {
+      const res = await fetch('/api/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice: state.openaiVoice }),
+      });
+      if (!res.ok) throw new Error(`TTS request failed (${res.status})`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      state.currentAudio = audio;
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        state.currentAudio = null;
+      };
+      await audio.play();
+    } catch (err) {
+      console.error('OpenAI TTS error:', err);
+    }
+  }
+
+  function speakBrowser(text, opts = {}) {
     if (typeof speechSynthesis === 'undefined') return;
     speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
@@ -1719,6 +1799,14 @@ footer.site {
     if (opts.onstart) utter.onstart = opts.onstart;
     speechSynthesis.speak(utter);
     return utter;
+  }
+
+  function stopAudioOnly() {
+    if (state.currentAudio) {
+      state.currentAudio.pause();
+      state.currentAudio = null;
+    }
+    if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
   }
 
   // ============== SEGMENTED CONTROLS ==============
@@ -1754,6 +1842,12 @@ footer.site {
     state.topic = e.target.value.trim();
   });
 
+  // Voice selection
+  $('#voice-select').addEventListener('change', (e) => {
+    stopStory();
+    applyVoiceSelection(e.target.value);
+  });
+
   // Definition mode
   $('#def-mode').addEventListener('change', (e) => {
     state.defMode = e.target.value;
@@ -1779,8 +1873,7 @@ footer.site {
   async function generateStory() {
     closePopover();
     if (state.speaking) {
-      speechSynthesis.cancel();
-      state.speaking = false;
+      stopStory();
     }
 
     showView('loading');
@@ -2151,30 +2244,66 @@ footer.site {
   $('#play-btn').addEventListener('click', () => playStory());
   $('#stop-btn').addEventListener('click', () => stopStory());
 
-  function playStory() {
+  async function playStory() {
     if (!state.story) return;
     closePopover();
 
-    // Build a clean text and a parallel map from char index → word span
+    if (state.voiceMode === 'openai') {
+      await playStoryOpenAI();
+    } else {
+      playStoryBrowser();
+    }
+  }
+
+  async function playStoryOpenAI() {
+    const text = $('#story-body').innerText;
+    $('#play-btn').style.display = 'none';
+    $('#stop-btn').style.display = 'inline-flex';
+    state.speaking = true;
+
+    try {
+      const res = await fetch('/api/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice: state.openaiVoice }),
+      });
+      if (!res.ok) throw new Error(`TTS request failed (${res.status})`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      state.currentAudio = audio;
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        state.currentAudio = null;
+        $('#play-btn').style.display = 'inline-flex';
+        $('#stop-btn').style.display = 'none';
+        state.speaking = false;
+      };
+      audio.play();
+    } catch (err) {
+      console.error('OpenAI TTS error:', err);
+      $('#play-btn').style.display = 'inline-flex';
+      $('#stop-btn').style.display = 'none';
+      state.speaking = false;
+    }
+  }
+
+  function playStoryBrowser() {
     const spans = Array.from($$('#story-body .w'));
     const text = $('#story-body').innerText;
-    // Build cumulative char offsets for each word span by walking the body
     const wordOffsets = computeWordOffsets(text, spans);
 
     $('#play-btn').style.display = 'none';
     $('#stop-btn').style.display = 'inline-flex';
     state.speaking = true;
 
-    speak(text, {
+    speakBrowser(text, {
       onboundary: (e) => {
         if (e.name !== 'word') return;
-        const charIdx = e.charIndex;
-        // Find which span this char belongs to
-        const span = findSpanForOffset(charIdx, wordOffsets);
+        const span = findSpanForOffset(e.charIndex, wordOffsets);
         spans.forEach(s => s.classList.remove('is-speaking'));
         if (span) {
           span.classList.add('is-speaking');
-          // Scroll into view smoothly if needed
           const r = span.getBoundingClientRect();
           if (r.top < 80 || r.bottom > window.innerHeight - 80) {
             span.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2191,7 +2320,7 @@ footer.site {
   }
 
   function stopStory() {
-    speechSynthesis.cancel();
+    stopAudioOnly();
     $$('.w.is-speaking').forEach(s => s.classList.remove('is-speaking'));
     $('#play-btn').style.display = 'inline-flex';
     $('#stop-btn').style.display = 'none';
